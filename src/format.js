@@ -9,6 +9,15 @@ export function fmtDate(d) {
   return `${MONTHS[d.getMonth()]} ${pad(d.getDate())}, ${d.getFullYear()}`
 }
 
+/** `MMM DD, YYYY, HH:MM AM/PM`, 12-hour, zero-padded hour (`07:33 AM`). */
+export function fmtDateTime(d) {
+  const h = d.getHours() % 12 || 12
+  return `${fmtDate(d)}, ${pad(h)}:${pad(d.getMinutes())} ${d.getHours() < 12 ? 'AM' : 'PM'}`
+}
+
+/** True when fmtRelative shows the date relative ("4 days ago"), not absolute. */
+export const isRelative = (d, now) => (now - d) / 86400000 < 31
+
 /**
  * Relative under 30 days, absolute after (mock-data.md). The examples there
  * spell the unit out ("Updated 4 days ago"), so hours and minutes do too.
@@ -41,6 +50,14 @@ export function fmtCount(n) {
   if (n < 1000) return String(n)
   if (n < 1e6) return `${+(n / 1000).toFixed(2)}k`
   return `${+(n / 1e6).toFixed(2)}M`
+}
+
+/** `firstname.lastname@company.com`, all lowercase; single-word names use the
+   first name (mock-data.md § Formats). The cast work at Dunder Mifflin, as in
+   the automation details prototype. */
+export function emailFor(name, domain = 'dundermifflin.com') {
+  const w = name.trim().toLowerCase().split(/\s+/)
+  return `${w.length === 1 ? w[0] : `${w[0]}.${w[w.length - 1]}`}@${domain}`
 }
 
 /** Avatar initials (mock-data.md § People). */

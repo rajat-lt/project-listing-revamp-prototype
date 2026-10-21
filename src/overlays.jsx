@@ -1,10 +1,13 @@
-// Tabs, the segmented control, the select panel, the popover and toasts. Same
-// rules as lt.jsx: real component names, documented props, token styling, and
-// the matching guidelines/ file for behaviour.
-import React, { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+// Tabs, the nav list, the segmented control, the select panel, the popover,
+// the drawer, the token input and toasts. Same rules as lt.jsx: real component
+// names, documented props, token styling, and the matching guidelines/ file
+// for behaviour.
+import React, {
+  createContext, useCallback, useContext, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { X, CircleCheck, CircleAlert, Info, ChevronDown, Check } from 'lucide-react'
-import { cx, placeFloating, LTTooltip, LTIconButton, LTButton, LTInputBox, usePortalRoot } from './lt.jsx'
+import { cx, placeFloating, LTTooltip, LTIconButton, LTButton, LTInputBox, LTToken, TruncText, usePortalRoot } from './lt.jsx'
 
 /* ---------- LTUnderlineNav ----------
    The page's main tabs: one per page, each tab its own URL, aligned left and
@@ -30,6 +33,60 @@ export function LTUnderlineNav({ navs, current, ariaLabel, size = 'medium', onCl
         </ul>
       </nav>
     </div>
+  )
+}
+
+/* ---------- LTTabNav ----------
+   The second tab layer. It always sits below the page's LTUnderlineNav
+   (guidelines/ltunderlinenav.md); here it switches the For You panel between
+   Test Instances and Milestones. Boxed tabs on a hairline, the current one
+   raised white, as in the notification-center prototype. Documented props:
+   items (shape TBD → lttabnav--tab-nav), activeTab, ariaLabel, size,
+   onSelect. Each tab has its own URL. */
+export function LTTabNav({ items, activeTab, ariaLabel, size = 'medium', onSelect }) {
+  return (
+    <nav className={cx('lt-tabnav', `lt-tabnav--${size}`)} aria-label={ariaLabel}>
+      <ul>
+        {items.map(t => (
+          <li key={t.id}>
+            <a href={t.href} aria-current={t.id === activeTab ? 'page' : undefined}
+              className={cx('lt-tabnav__item', t.id === activeTab && 'is-current')}
+              onClick={e => onSelect?.(e, t)}>
+              <span className="lt-unav__label" data-text={t.label}>{t.label}</span>
+              {t.counter != null && <span className="lt-counter lt-counter--secondary">{t.counter}</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+/* ---------- LTNavList ----------
+   The left pane's list, as the folder pane of the test case and test run
+   listings (test-entity-listing.md §3.2). Each item is a link with its own
+   URL. The selected one carries the orange bar and the grey fill; a grey
+   fill alone is hover (guidelines/README.md §1). Documented props:
+   ariaLabel, listItems (shape TBD → ltnavlist--nav-list; { id, label, meta,
+   href } here), selectedTab, handleSelectedTab, showTruncatedName. */
+export function LTNavList({ ariaLabel, listItems, selectedTab, handleSelectedTab, showTruncatedName = true }) {
+  return (
+    <nav aria-label={ariaLabel} className="lt-navlist">
+      <ul>
+        {listItems.map(i => (
+          <li key={i.id}>
+            <a href={i.href} aria-current={i.id === selectedTab ? 'page' : undefined}
+              className={cx('lt-navlist__item', i.id === selectedTab && 'is-selected')}
+              onClick={e => handleSelectedTab?.(e, i)}>
+              {showTruncatedName
+                ? <TruncText text={i.label} className="lt-navlist__label" />
+                : <span className="lt-navlist__label">{i.label}</span>}
+              {i.meta && <span className="lt-navlist__meta">{i.meta}</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   )
 }
 
@@ -198,6 +255,103 @@ export function LTSelectPanel({ title, subtitle, buttonLabel, label, ariaLabel, 
           </div>
         </div>, root)}
     </>
+  )
+}
+
+/* ---------- LTDrawer ----------
+   Right side only, over a backdrop, so nothing behind it stays interactive
+   (guidelines/ltmodal.md). Widths 320, 480, 640, 960 or 1120. It opens
+   imperatively, drawerRef.current.openDrawer(), as the component does
+   (story-verified). Documented props: title, subTitle, content,
+   footerContent, showFooter, onClose, width, closable. Focus moves in and is
+   held there; Esc and the close button close it, and the backdrop closes it
+   only while nothing has been typed (ltmodal.md: never with unsaved
+   changes), which `dirty` reports. Focus returns to whatever opened it. */
+export const LTDrawer = React.forwardRef(function LTDrawer(
+  { title, subTitle, content, footerContent, showFooter = true, onClose, width = 480, closable = true, dirty = false,
+    initialFocusRef },
+  ref,
+) {
+  const [open, setOpen] = useState(false)
+  const boxRef = useRef(null)
+  const returnTo = useRef(null)
+  const id = useId()
+  const close = () => {
+    setOpen(false)
+    onClose?.()
+    returnTo.current?.focus?.()
+  }
+  useImperativeHandle(ref, () => ({
+    openDrawer: () => { returnTo.current = document.activeElement; setOpen(true) },
+    closeDrawer: close,
+  }))
+  useEffect(() => {
+    if (!open) return
+    const box = boxRef.current
+    const focusables = () => [...box.querySelectorAll(
+      'button:not([aria-disabled="true"]), [href], input, textarea, select, [tabindex]:not([tabindex="-1"])')]
+    ;(initialFocusRef?.current ?? focusables()[0])?.focus()
+    const onKey = e => {
+      if (e.key === 'Escape') { e.preventDefault(); close() }
+      if (e.key === 'Tab') {
+        const f = focusables()
+        if (!f.length) return
+        const first = f[0], last = f[f.length - 1]
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
+  if (!open) return null
+  return createPortal(
+    <div className="lt-backdrop lt-backdrop--drawer" onMouseDown={e => { if (e.target === e.currentTarget && !dirty) close() }}>
+      <div ref={boxRef} role="dialog" aria-modal="true" aria-labelledby={`${id}-t`} className="lt-drawer" style={{ width }}>
+        <div className="lt-drawer__head">
+          <div className="lt-drawer__titles">
+            <h2 id={`${id}-t`} className="lt-drawer__title">{title}</h2>
+            {subTitle && <p className="lt-drawer__sub">{subTitle}</p>}
+          </div>
+          {closable && <LTIconButton icon={X} ariaLabel="Close" variant="invisible" onClick={close} />}
+        </div>
+        <div className="lt-drawer__body">{content}</div>
+        {showFooter && footerContent && <div className="lt-drawer__foot">{footerContent}</div>}
+      </div>
+    </div>, document.body)
+})
+
+/* ---------- LTTextInputWithTokens ----------
+   Free text that becomes tokens: Enter adds one, Backspace in an empty field
+   removes the last, and each token has its own remove button. Documented
+   props: placeholder, onTokenAdd, removeToken, size, ariaRequired. It has no
+   label prop, so an LTFormControl labels it (`id` ties the two). The tokens
+   it shows are its own; the callbacks tell the form. */
+export function LTTextInputWithTokens({ id, placeholder, onTokenAdd, removeToken, size = 'medium', ariaRequired = false,
+  describedBy }) {
+  const [tokens, setTokens] = useState([])
+  const [text, setText] = useState('')
+  const inputRef = useRef(null)
+  const add = () => {
+    const t = text.trim()
+    if (!t) return
+    if (!tokens.some(x => x.toLowerCase() === t.toLowerCase())) { setTokens(l => [...l, t]); onTokenAdd?.(t) }
+    setText('')
+  }
+  const remove = t => { setTokens(l => l.filter(x => x !== t)); removeToken?.(t); inputRef.current?.focus() }
+  return (
+    <div className={cx('lt-tokens', `lt-tokens--${size}`)} onMouseDown={e => { if (e.target === e.currentTarget) { e.preventDefault(); inputRef.current?.focus() } }}>
+      {tokens.map(t => <LTToken key={t} text={t} size="small" onRemove={() => remove(t)} />)}
+      <input id={id} ref={inputRef} value={text} placeholder={tokens.length ? '' : placeholder}
+        aria-required={ariaRequired || undefined} aria-describedby={describedBy} autoComplete="off" spellCheck={false}
+        onChange={e => setText(e.target.value)}
+        onKeyDown={e => {
+          // Enter adds a token and never submits the form around it.
+          if (e.key === 'Enter') { e.preventDefault(); add() }
+          else if (e.key === 'Backspace' && !text && tokens.length) remove(tokens[tokens.length - 1])
+        }}
+        onBlur={add} />
+    </div>
   )
 }
 
