@@ -7,6 +7,7 @@
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Search, CircleAlert, CircleCheck, TriangleAlert, Info, CircleSlash, LoaderCircle } from 'lucide-react'
+import { emailFor, fmtDateTime, fmtRelative, isRelative } from './format.js'
 
 export const cx = (...a) => a.filter(Boolean).join(' ')
 
@@ -267,8 +268,8 @@ export function LTMetaData({ leadingIcon: Icon, value, showLeadingDot = true, la
     <span className={cx('meta-item', !showLeadingDot && 'meta-item--lead', className)}>
       {showLeadingDot && <span className="meta-dot" aria-hidden="true">·</span>}
       {Icon && <Icon size={16} aria-hidden="true" className="meta-icon" />}
-      {label && <span className="vh">{label} </span>}
-      {children ?? value}
+      {/* One span, so text and a hint inside it wrap as one line of text. */}
+      <span className="meta-item__value">{label && <span className="vh">{label} </span>}{children ?? value}</span>
     </span>
   )
 }
@@ -304,15 +305,25 @@ export function LTAvatar({ initials, name, size = 32, decorative = false }) {
 
 /* ---------- LTInputBox ----------
    Search fields keep variant="default", the one with a background
-   (guidelines/ltinputbox.md). */
+   (guidelines/ltinputbox.md). With a `label` it is a form field: the label
+   above, the required indicator, then the validation message and the
+   caption below. The message leads with the fix, and an icon and words
+   carry the error, never the border colour alone. */
 export function LTInputBox({ value, onChange, placeholder, ariaLabel = 'Search', type = 'search', size = 'medium',
-  allowClearSearch = type === 'search', forwardRef, onKeyDown, keyshortcuts, className, extraStyle }) {
+  allowClearSearch = type === 'search', forwardRef, onKeyDown, keyshortcuts, className, extraStyle,
+  label, required = false, caption, validationStatus = 'default', validationMessage, id, maxLength }) {
+  const autoId = useId()
+  const fid = id || autoId
   const lead = type === 'search'
-  return (
-    <div className={cx('lt-input', `lt-input--${size}`, !lead && 'lt-input--plain', className)} style={extraStyle}>
+  const error = validationStatus === 'error' && validationMessage
+  const box = (
+    <div className={cx('lt-input', `lt-input--${size}`, !lead && 'lt-input--plain', error && 'is-error', !label && className)}
+      style={label ? undefined : extraStyle}>
       {lead && <Search size={16} aria-hidden="true" className="lt-input__lead" />}
-      <input ref={forwardRef} type={type} value={value} placeholder={placeholder} aria-label={ariaLabel}
-        aria-keyshortcuts={keyshortcuts} autoComplete="off" spellCheck={false}
+      <input id={fid} ref={forwardRef} type={type} value={value} placeholder={placeholder}
+        aria-label={label ? undefined : ariaLabel} aria-required={required || undefined} aria-invalid={error ? true : undefined}
+        aria-describedby={cx(error && `${fid}-msg`, caption && `${fid}-cap`) || undefined}
+        aria-keyshortcuts={keyshortcuts} maxLength={maxLength} autoComplete="off" spellCheck={false}
         onChange={e => onChange(e.target.value)} onKeyDown={onKeyDown} />
       {allowClearSearch && value && (
         <button type="button" className="lt-input__clear" aria-label="Clear search"
@@ -321,6 +332,106 @@ export function LTInputBox({ value, onChange, placeholder, ariaLabel = 'Search',
         </button>
       )}
     </div>
+  )
+  if (!label) return box
+  return (
+    <div className={cx('lt-field', className)} style={extraStyle}>
+      <label htmlFor={fid} className="lt-field__label">
+        {label}{required && <span className="lt-field__req" aria-hidden="true"> *</span>}
+      </label>
+      {box}
+      {error && <FieldMessage id={`${fid}-msg`} text={validationMessage} />}
+      {caption && <p id={`${fid}-cap`} className="lt-field__caption">{caption}</p>}
+    </div>
+  )
+}
+
+function FieldMessage({ id, text }) {
+  return (
+    <p id={id} className="lt-field__msg">
+      <span className="lt-field__msg-icon" aria-hidden="true"><CircleAlert size={12} /></span>{text}
+    </p>
+  )
+}
+
+/* ---------- LTTextarea ----------
+   Label above, caption below, vertical resize only so it never breaks the
+   layout (guidelines/lttextarea.md). */
+export function LTTextarea({ label, value, onChange, placeholder, required = false, caption, rows = 4, resize = 'vertical',
+  validationStatus = 'default', validationMessage, id, forwardRef, className }) {
+  const autoId = useId()
+  const fid = id || autoId
+  const error = validationStatus === 'error' && validationMessage
+  return (
+    <div className={cx('lt-field', className)}>
+      <label htmlFor={fid} className="lt-field__label">
+        {label}{required && <span className="lt-field__req" aria-hidden="true"> *</span>}
+      </label>
+      <textarea id={fid} ref={forwardRef} rows={rows} value={value} placeholder={placeholder}
+        className={cx('lt-textarea', error && 'is-error')} style={{ resize }}
+        aria-required={required || undefined} aria-invalid={error ? true : undefined}
+        aria-describedby={cx(error && `${fid}-msg`, caption && `${fid}-cap`) || undefined}
+        onChange={e => onChange(e.target.value)} />
+      {error && <FieldMessage id={`${fid}-msg`} text={validationMessage} />}
+      {caption && <p id={`${fid}-cap`} className="lt-field__caption">{caption}</p>}
+    </div>
+  )
+}
+
+/* ---------- LTFormControl ----------
+   A label and a caption around a control that has neither prop of its own
+   (here LTTextInputWithTokens). Documented props: label, caption, id,
+   isRequired, children. */
+export function LTFormControl({ label, caption, id, isRequired = false, children, className }) {
+  return (
+    <div className={cx('lt-field', className)}>
+      <label htmlFor={id} className="lt-field__label">
+        {label}{isRequired && <span className="lt-field__req" aria-hidden="true"> *</span>}
+      </label>
+      {children}
+      {caption && <p id={`${id}-cap`} className="lt-field__caption">{caption}</p>}
+    </div>
+  )
+}
+
+/* ---------- LTToken ----------
+   Metadata the user can remove: a token, never a removable LTTag
+   (guidelines/lttag.md). Documented props: as, hideRemoveButton, isSelected,
+   size; the text and the remove handler stand in for the undocumented rest.
+   The remove button keeps a 24px target (guidelines/README.md §9). */
+export function LTToken({ text, onRemove, hideRemoveButton = false, size = 'medium' }) {
+  return (
+    <span className={cx('lt-token', `lt-token--${size}`)}>
+      <span className="lt-token__text">{text}</span>
+      {!hideRemoveButton && (
+        <button type="button" className="lt-token__remove" aria-label={`Remove ${text}`} onClick={onRemove}>
+          <X size={12} aria-hidden="true" />
+        </button>
+      )}
+    </span>
+  )
+}
+
+/* ---------- names and dates that explain themselves (v2 item 6) ----------
+   A name shows its email, a relative date its full date and time, on hover
+   and on keyboard focus. guidelines/lttooltip.md keeps tooltips off plain
+   text, so the text is made focusable, as in the automation details
+   prototype (spec C13). An absolute date already says when, so it carries
+   none. */
+export function PersonHint({ name }) {
+  return (
+    <LTTooltip type="description" text={emailFor(name)} direction="bottom">
+      <span className="meta-hint" tabIndex={0}>{name}</span>
+    </LTTooltip>
+  )
+}
+export function TimeHint({ date, now }) {
+  const text = fmtRelative(date, now)
+  if (!isRelative(date, now)) return <time dateTime={date.toISOString()}>{text}</time>
+  return (
+    <LTTooltip type="description" text={fmtDateTime(date)} direction="bottom">
+      <time className="meta-hint" tabIndex={0} dateTime={date.toISOString()}>{text}</time>
+    </LTTooltip>
   )
 }
 

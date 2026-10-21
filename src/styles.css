@@ -176,6 +176,7 @@ p, h1, h2, h3 { margin: 0; }
 }
 
 .meta-item { display: inline-flex; align-items: center; gap: var(--space-1); min-width: 0; }
+.meta-item__value { min-width: 0; }
 .meta-dot { display: inline-block; width: var(--space-2); text-align: center; color: var(--fg-subtle); }
 .meta-icon { flex: none; color: var(--fg-muted); }
 /* A wrapped meta line never starts with a dot: every item leads with 12px
@@ -252,7 +253,7 @@ p, h1, h2, h3 { margin: 0; }
 .lt-loader__heading { color: var(--fg-default); font-weight: var(--weight-bold); }
 
 /* ---------------- tabs, segmented control, select panel, popover ---------------- */
-.lt-unav { display: flex; align-items: center; min-height: 48px; margin-top: var(--space-2); border-bottom: 1px solid var(--border-muted); }
+.lt-unav { display: flex; align-items: center; min-height: 48px; }
 .lt-unav nav { min-width: 0; position: relative; z-index: 0; }
 .lt-unav ul { display: flex; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
 .lt-unav__item {
@@ -314,6 +315,100 @@ p, h1, h2, h3 { margin: 0; }
 .lt-selpanel__empty { padding: var(--space-2) var(--space-4) var(--space-3); color: var(--fg-muted); }
 .lt-selpanel__foot { display: flex; justify-content: flex-end; padding: var(--space-2); border-top: 1px solid var(--border-muted); }
 
+/* LTTabNav: boxed tabs on a hairline, the current one raised white and open
+   into the content below (the notification-center prototype's look). */
+.lt-tabnav { border-bottom: 1px solid var(--border-default); }
+.lt-tabnav ul { display: flex; gap: var(--space-1); list-style: none; margin: 0; padding: 0; }
+.lt-tabnav__item {
+  display: inline-flex; align-items: center; gap: var(--space-2); height: 40px; padding: 0 var(--space-4);
+  margin-bottom: -1px; border: 1px solid transparent; border-radius: var(--radius-2) var(--radius-2) 0 0;
+  color: var(--fg-muted); text-decoration: none; white-space: nowrap;
+}
+.lt-tabnav__item:hover { color: var(--fg-default); background: var(--canvas-subtle); }
+.lt-tabnav__item.is-current {
+  color: var(--fg-default); font-weight: var(--weight-bold); background: var(--canvas-default);
+  border-color: var(--border-default); border-bottom-color: var(--canvas-default);
+}
+.lt-tabnav__item:focus-visible { outline-offset: -4px; }
+
+/* LTNavList: the selected item has the orange bar and the grey fill; a grey
+   fill alone is hover (guidelines/README.md §1). Hover also underlines the
+   name, as on every list item (v2 item 5). */
+.lt-navlist ul { display: flex; flex-direction: column; gap: var(--space-1); list-style: none; margin: 0; padding: 0; }
+.lt-navlist__item {
+  position: relative; display: flex; flex-direction: column; overflow: hidden;
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-2); color: var(--fg-default); text-decoration: none;
+}
+.lt-navlist__item:hover { background: var(--list-hover-bg); }
+.lt-navlist__item:hover .lt-navlist__label { text-decoration: underline; }
+.lt-navlist__item.is-selected { background: var(--bg-selected); }
+.lt-navlist__item.is-selected::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--highlight); }
+.lt-navlist__item:focus-visible { outline-offset: -2px; }
+.lt-navlist__label { font-weight: var(--weight-bold); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lt-navlist__meta { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
+
+/* LTDrawer: right side, over a backdrop, above the platform shell too. */
+.lt-backdrop {
+  position: fixed; inset: 0; z-index: 800; display: flex;
+  background: var(--overlay-backdrop); animation: fade-in 120ms var(--ease-out);
+}
+.lt-backdrop--drawer { justify-content: flex-end; }
+.lt-drawer {
+  height: 100%; max-width: 100vw; display: flex; flex-direction: column;
+  background: var(--canvas-overlay); box-shadow: var(--shadow-large); animation: slide-in 200ms var(--ease-out);
+}
+.lt-drawer__head {
+  display: flex; align-items: flex-start; gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6); border-bottom: 1px solid var(--border-muted);
+}
+.lt-drawer__titles { flex: 1; min-width: 0; padding-top: var(--space-1); }
+/* A dialog heading is body/medium-bold (guidelines/README.md §3). */
+.lt-drawer__title { font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); overflow-wrap: anywhere; }
+.lt-drawer__sub { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
+.lt-drawer__body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-6); }
+/* Footer order: secondary, then primary hard right (guidelines/README.md §7). */
+.lt-drawer__foot {
+  display: flex; justify-content: flex-end; gap: var(--space-2);
+  padding: var(--space-4) var(--space-6); border-top: 1px solid var(--border-muted);
+}
+
+/* Form fields: label above, then the message and the caption below. */
+.form { display: flex; flex-direction: column; gap: var(--space-5); }
+.lt-field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.lt-field__label { font-weight: var(--weight-bold); }
+.lt-field__msg { display: flex; align-items: flex-start; gap: var(--space-1); font-size: var(--font-12); line-height: var(--lh-12); color: var(--danger-fg); }
+.lt-field__msg-icon { display: inline-flex; align-items: center; flex: none; height: var(--lh-12); }
+.lt-field__caption { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
+.lt-input--plain input { padding: 0 var(--space-3); }
+.lt-input.is-error, .lt-textarea.is-error { border-color: var(--danger-emphasis); }
+.lt-textarea {
+  display: block; width: 100%; min-height: 64px; padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-default); border-radius: var(--radius-2); background: var(--bg-muted);
+  font: inherit; font-size: var(--font-14); line-height: var(--lh-14); color: var(--fg-default);
+}
+.lt-textarea:focus { outline: none; border-color: var(--accent-emphasis); box-shadow: inset 0 0 0 1px var(--accent-emphasis); }
+
+/* LTTextInputWithTokens and LTToken. Tokens are 24px, so the remove button
+   keeps the 24px minimum target (guidelines/README.md §9). */
+.lt-tokens {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-height: 32px; padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-default); border-radius: var(--radius-2); background: var(--bg-muted); cursor: text;
+}
+.lt-tokens:focus-within { border-color: var(--accent-emphasis); box-shadow: inset 0 0 0 1px var(--accent-emphasis); }
+.lt-tokens input {
+  flex: 1; min-width: 120px; height: 24px; padding: 0; border: 0; background: transparent; outline: none;
+  font-size: var(--font-14); color: var(--fg-default);
+}
+.lt-token {
+  display: inline-flex; align-items: center; height: 24px; padding-left: var(--space-2); border-radius: var(--radius-pill);
+  background: var(--neutral-muted); font-size: var(--font-12); line-height: 1; color: var(--fg-default); white-space: nowrap;
+}
+.lt-token__remove {
+  display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+  padding: 0; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--fg-muted); cursor: pointer;
+}
+.lt-token__remove:hover { color: var(--fg-default); }
+
 /* LTPopover: canvas overlay, a caret at the anchor, a visible close. */
 .lt-popover {
   position: fixed; z-index: 1150; width: 360px;
@@ -349,79 +444,75 @@ p, h1, h2, h3 { margin: 0; }
 .lt-toast__close:hover { background: var(--log-btn-hover-bg); color: var(--fg-on-emphasis); }
 
 /* ---------------- the page ---------------- */
-.view-head { margin: var(--space-6) 0 var(--space-6); }
+/* v2 item 1: the tabs sit on the top bar's lower edge, full width, as the
+   project nav does on the test case and test run listings
+   (test-entity-listing.md §3.1). */
+.pagenav { flex: none; padding: 0 var(--space-6); background: var(--canvas-default); border-bottom: 1px solid var(--border-muted); }
+.content--panes { overflow: hidden; }
+
+.view-head { margin: var(--space-6) 0; }
 .view-title { font-size: var(--font-16); line-height: var(--lh-16); font-weight: var(--weight-bold); }
 .view-desc { margin-top: var(--space-1); max-width: 640px; color: var(--fg-muted); }
-.section-title { font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
-.section-head { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
 .panel { border: 1px solid var(--border-default); border-radius: var(--radius-2); }
 
-/* For You: the work takes the width, the context sits in 320px, the pane
-   scale's simple-list step (guidelines/README.md §2). */
-.foryou { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-6); align-items: start; }
-.foryou__aside { position: sticky; top: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
+/* For You: two panes, as the test case and test run listings lay them out
+   (test-entity-listing.md §3.2): a 320px left pane, then the panel, each
+   scrolling on its own. */
+.fy { display: flex; height: 100%; }
+.fy-pane { flex: 0 0 320px; min-height: 0; overflow-y: auto; padding: var(--space-4); border-right: 1px solid var(--border-muted); }
+/* The pane's title is SMALL_BOLD, as "Folders" is on those listings. */
+.fy-pane__title { margin: var(--space-1) 0 var(--space-3) var(--space-3); font-size: var(--font-12); line-height: var(--lh-12); font-weight: var(--weight-bold); }
+.fy-main { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding: var(--space-4) var(--space-6) var(--space-12); }
+.fy-head { margin: var(--space-2) 0 var(--space-4); }
+.fy-panel { margin-top: var(--space-4); }
+.fy-state { width: min(1232px, 100% - 224px); margin: 0 auto; }
 
-.ti-group + .ti-group { margin-top: var(--space-6); }
-.ti-group__head { display: flex; align-items: baseline; gap: var(--space-2); margin-bottom: var(--space-2); }
-.ti-group__title { font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
-.ti-group__count { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
-.ti-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border-default); border-radius: var(--radius-2); }
-.ti-row { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) var(--space-4); }
-.ti-row + .ti-row { border-top: 1px solid var(--border-muted); }
+/* Rows sit in one bordered container (project-listing.md delta 4). */
+.rows, .plist { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border-default); border-radius: var(--radius-2); }
+.rows > li + li, .plist > li + li { border-top: 1px solid var(--border-muted); }
+
+.ti-row, .ms-row { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) var(--space-4); }
 .ti-row__status, .prow__status { height: var(--lh-14); align-items: center; }
-.ti-row__main { flex: 1; min-width: 0; }
+.ti-row__main, .ms-row__main { flex: 1; min-width: 0; }
 .ti-row__title {
   display: inline-block; max-width: 100%; vertical-align: top;
   font-weight: var(--weight-bold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ti-row__main .meta-line { margin-top: var(--space-1); }
-.ti-row__side { flex: 0 0 200px; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.ti-row__meta, .ms-row__meta { margin-top: var(--space-1); }
+.ti-row__side, .ms-row__side { flex: 0 0 200px; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
 .ti-row__when { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
-.ti-row__by { display: flex; align-items: center; gap: var(--space-2); min-width: 0; font-size: var(--font-12); line-height: var(--lh-12); }
-.ti-row__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The name wraps rather than cut: its tooltip shows the email, not the name. */
+.ti-row__by { display: flex; align-items: flex-start; gap: var(--space-2); min-width: 0; font-size: var(--font-12); line-height: var(--lh-12); }
+.ms-row__icon { display: inline-flex; align-items: center; flex: none; height: var(--lh-14); color: var(--fg-muted); }
+.ms-row__title { font-weight: var(--weight-bold); }
+.ms-row__left { font-weight: var(--weight-bold); }
+.ms-row__due { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
 
-.aside-card { padding: var(--space-4); border: 1px solid var(--border-default); border-radius: var(--radius-2); }
-.aside-card > .section-title { margin-bottom: var(--space-3); }
-.aside-card .lt-blank { padding: var(--space-4) 0; }
-.milestone { display: flex; gap: var(--space-2); }
-.milestone__icon { display: inline-flex; align-items: center; flex: none; height: var(--lh-14); color: var(--fg-muted); }
-.milestone__main { min-width: 0; display: flex; flex-direction: column; }
-.milestone__name { font-weight: var(--weight-bold); align-self: flex-start; }
-.milestone__project { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
-.milestone__due { margin-top: var(--space-2); }
-.since { list-style: none; margin: 0; padding: 0; }
-.since__row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; }
-.since__row:first-child { padding-top: 0; }
-.since__row:last-child { padding-bottom: 0; }
-.since__row + .since__row { border-top: 1px solid var(--border-muted); }
-.since__main { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
-.since__when { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
-.since__count { flex: none; font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; }
+/* v2 item 5: a click anywhere on a row or card opens its item, through the
+   title link's cover; hovering it underlines the title. The controls inside
+   sit above the cover and keep their own behaviour, and while the pointer is
+   on one of them the title stays as it is. */
+.clickrow { position: relative; }
+.clickrow__link::after { content: ''; position: absolute; inset: 0; }
+.pcard .clickrow__link::after { border-radius: var(--radius-2); }
+.clickrow:hover:not(:has(:is(button, .meta-hint, .lt-link:not(.clickrow__link)):hover)) .clickrow__link { text-decoration: underline; }
+.clickrow :is(button, .meta-hint, .lt-link:not(.clickrow__link)) { position: relative; z-index: 1; }
+.clickrow__link:focus-visible { outline: none; }
+.clickrow:has(.clickrow__link:focus-visible) { outline: 2px solid var(--focus-outline); outline-offset: -2px; }
+.pcard.clickrow:has(.clickrow__link:focus-visible) { outline-offset: 2px; }
+
+/* v2 item 6: a name or a relative date with more on hover and focus. */
+.meta-hint { border-radius: var(--radius-1); cursor: default; }
+.meta-hint:hover { color: var(--fg-default); }
+.meta-hint:focus-visible { outline-offset: 1px; }
 
 /* Your Projects. */
-.recent { margin-bottom: var(--space-8); }
-.recent__list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); list-style: none; margin: var(--space-3) 0 0; padding: 0; }
-.recent__card {
-  position: relative; display: flex; flex-direction: column; align-items: flex-start; min-width: 0;
-  padding: var(--space-3) var(--space-4); border: 1px solid var(--border-default); border-radius: var(--radius-2);
-}
-.recent__card:hover { background: var(--canvas-subtle); }
-/* The whole card opens the project; the name stays the one link. */
-.recent__name { max-width: 100%; font-weight: var(--weight-bold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.recent__name::after { content: ''; position: absolute; inset: 0; border-radius: var(--radius-2); }
-.recent__name:focus-visible { outline: none; }
-.recent__card:has(.recent__name:focus-visible) { outline: 2px solid var(--focus-outline); outline-offset: 2px; }
-.recent__when { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
-
-.toolbar { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-3) 0 var(--space-2); }
+.toolbar { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
 .toolbar__search { flex: 1; }
-.caption { margin-bottom: var(--space-3); font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
-.all > .panel { margin-top: var(--space-3); }
+section > .panel { margin-top: var(--space-3); }
+.showall { margin-top: var(--space-2); }
 
-/* Rows sit in one bordered container (project-listing.md delta 4). */
-.plist { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border-default); border-radius: var(--radius-2); }
 .prow { display: flex; align-items: flex-start; gap: var(--space-4); padding: var(--space-4) var(--space-5); }
-.prow + .prow { border-top: 1px solid var(--border-muted); }
 .prow__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
 .prow__head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); min-width: 0; }
 .prow__title, .pcard__title { font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); min-width: 0; overflow-wrap: anywhere; }
@@ -484,6 +575,7 @@ p, h1, h2, h3 { margin: 0; }
 /* ---------------- motion ---------------- */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes slide-in { from { transform: translateX(var(--space-6)); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 1ms !important; animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
 }
