@@ -80,6 +80,32 @@ p, h1, h2, h3 { margin: 0; }
 /* Depth 1: a plain label in SMALL_BOLD (topbar.md §3). */
 .topbar-label { font-size: var(--font-12); line-height: var(--lh-12); font-weight: var(--weight-bold); }
 .topbar-right { display: flex; align-items: center; gap: var(--space-2); flex: none; }
+/* Depth 2 inside a project: "Test Manager / {project}" (LTBreadcrumbs,
+   medium). Earlier crumbs are muted links. */
+.crumbs { display: flex; align-items: center; list-style: none; margin: 0; padding: 0; min-width: 0; }
+.crumbs li { display: flex; align-items: center; min-width: 0; }
+.crumb { color: var(--fg-muted); text-decoration: none; white-space: nowrap; border-radius: var(--radius-1); }
+a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
+.crumb-sep { color: var(--fg-subtle); margin: 0 var(--space-2); }
+/* v3 items 2 and 4: the project's name and its caret, two parts of one
+   control, each with rest, hover and pressed states; the caret keeps its
+   pressed look while the panel is open. */
+.crumb-switch { display: inline-flex; align-items: stretch; min-width: 0; height: 28px; border-radius: var(--radius-2); }
+.crumb-switch__name {
+  display: inline-flex; align-items: center; min-width: 0; padding: 0 var(--space-2);
+  border-radius: var(--radius-2) 0 0 var(--radius-2); color: var(--fg-default); font-weight: var(--weight-bold);
+  text-decoration: none; white-space: nowrap;
+}
+.crumb-switch__caret {
+  display: inline-flex; align-items: center; justify-content: center; width: 24px; padding: 0; border: 0;
+  border-radius: 0 var(--radius-2) var(--radius-2) 0; background: transparent; color: var(--fg-muted); cursor: pointer;
+}
+.crumb-switch:hover { background: var(--neutral-muted); }
+.crumb-switch__name:hover, .crumb-switch__caret:hover { background: var(--btn-invisible-hover-bg); color: var(--fg-default); }
+.crumb-switch__name:active, .crumb-switch__caret:active,
+.crumb-switch__caret[aria-expanded="true"] { background: var(--btn-invisible-active-bg); color: var(--fg-default); }
+.crumb-switch.is-open { background: var(--neutral-muted); }
+.crumb-switch__name:focus-visible, .crumb-switch__caret:focus-visible { outline-offset: -2px; }
 /* Controls on the chrome take white fills, or they vanish into it. */
 .topbar .lt-iconbtn--outline, .topbar .lt-btn--outline { background: var(--canvas-default); }
 .topbar .lt-iconbtn--outline:hover, .topbar .lt-btn--outline:hover { background: var(--btn-hover-bg); }
@@ -205,6 +231,7 @@ p, h1, h2, h3 { margin: 0; }
   padding: 0 var(--space-8); font-size: var(--font-14); color: inherit;
 }
 .lt-input input::placeholder { color: var(--fg-subtle); }
+.lt-input--white, .lt-textarea, .lt-tokens { background: var(--canvas-default); }
 .lt-input input::-webkit-search-cancel-button { display: none; }
 .lt-input:focus-within { border-color: var(--accent-emphasis); box-shadow: inset 0 0 0 1px var(--accent-emphasis); }
 .lt-input__clear {
@@ -344,6 +371,7 @@ p, h1, h2, h3 { margin: 0; }
 .lt-navlist__item.is-selected { background: var(--bg-selected); }
 .lt-navlist__item.is-selected::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--highlight); }
 .lt-navlist__item:focus-visible { outline-offset: -2px; }
+.lt-navlist__line { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-width: 0; }
 .lt-navlist__label { font-weight: var(--weight-bold); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lt-navlist__meta { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
 
@@ -374,8 +402,15 @@ p, h1, h2, h3 { margin: 0; }
 
 /* Form fields: label above, then the message and the caption below. */
 .form { display: flex; flex-direction: column; gap: var(--space-5); }
+/* In the drawer the legend for the asterisks sits at the foot of the body,
+   as in the product's drawer. */
+.lt-drawer__body:has(.form--drawer) { display: flex; flex-direction: column; }
+.form--drawer { flex: 1; }
+.form__note { margin-top: auto; padding-top: var(--space-4); color: var(--fg-muted); }
 .lt-field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .lt-field__label { font-weight: var(--weight-bold); }
+/* The required mark is red, as in the product's drawer. */
+.lt-field__req { color: var(--danger-fg); }
 .lt-field__msg { display: flex; align-items: flex-start; gap: var(--space-1); font-size: var(--font-12); line-height: var(--lh-12); color: var(--danger-fg); }
 .lt-field__msg-icon { display: inline-flex; align-items: center; flex: none; height: var(--lh-12); }
 .lt-field__caption { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
@@ -383,7 +418,7 @@ p, h1, h2, h3 { margin: 0; }
 .lt-input.is-error, .lt-textarea.is-error { border-color: var(--danger-emphasis); }
 .lt-textarea {
   display: block; width: 100%; min-height: 64px; padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border-default); border-radius: var(--radius-2); background: var(--bg-muted);
+  border: 1px solid var(--border-default); border-radius: var(--radius-2);
   font: inherit; font-size: var(--font-14); line-height: var(--lh-14); color: var(--fg-default);
 }
 .lt-textarea:focus { outline: none; border-color: var(--accent-emphasis); box-shadow: inset 0 0 0 1px var(--accent-emphasis); }
@@ -392,7 +427,7 @@ p, h1, h2, h3 { margin: 0; }
    keeps the 24px minimum target (guidelines/README.md §9). */
 .lt-tokens {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-height: 32px; padding: var(--space-1) var(--space-2);
-  border: 1px solid var(--border-default); border-radius: var(--radius-2); background: var(--bg-muted); cursor: text;
+  border: 1px solid var(--border-default); border-radius: var(--radius-2); cursor: text;
 }
 .lt-tokens:focus-within { border-color: var(--accent-emphasis); box-shadow: inset 0 0 0 1px var(--accent-emphasis); }
 .lt-tokens input {
@@ -426,6 +461,97 @@ p, h1, h2, h3 { margin: 0; }
 .lt-popover__head { display: flex; align-items: flex-start; gap: var(--space-2); }
 .lt-popover__heading { flex: 1; min-width: 0; font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
 .lt-popover__close { flex: none; }
+
+/* LTActionMenu: the tab menu. */
+.lt-menu {
+  position: fixed; z-index: 1000; padding: var(--space-2);
+  background: var(--canvas-overlay); border: 1px solid var(--border-default);
+  border-radius: var(--radius-2); box-shadow: var(--shadow-overlay); animation: fade-in 100ms var(--ease-out);
+}
+.lt-menu__item {
+  display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 32px;
+  padding: 0 var(--space-2); border: 0; border-radius: var(--radius-2);
+  background: transparent; color: var(--fg-default); text-align: left; cursor: pointer;
+}
+.lt-menu__item:hover, .lt-menu__item:focus { background: var(--list-hover-bg); outline: none; }
+.lt-menu__item:focus-visible { box-shadow: inset 0 0 0 2px var(--focus-outline); }
+.lt-menu__icon { flex: none; color: var(--fg-muted); }
+.lt-menu__check { flex: none; width: 16px; display: inline-flex; }
+.lt-menu__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.lt-menu__label { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lt-menu__item.has-description { min-height: 44px; padding-top: var(--space-1); padding-bottom: var(--space-1); }
+.lt-menu__desc { font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
+/* Inactive: still focusable, the reason written in the item (ltactionmenu.md). */
+.lt-menu__item.is-inactive, .lt-menu__item.is-inactive .lt-menu__icon { color: var(--fg-disabled); cursor: not-allowed; }
+.lt-menu__divider { height: 1px; margin: var(--space-2) calc(var(--space-2) * -1); background: var(--border-muted); }
+.ctx-anchor { position: fixed; width: 1px; height: 1px; pointer-events: none; }
+
+/* Dragging a tab: the others slide to show where it will land. */
+.tabbar { flex: none; }
+.tabbar .lt-unav li { transition: transform 150ms var(--ease-out); }
+.tabbar .lt-unav li.is-dragged { position: relative; z-index: 1; transition: none; }
+.tabbar .lt-unav li.is-dragged .lt-unav__item::before { background: var(--canvas-default); box-shadow: var(--shadow-medium); }
+.tabbar.is-dragging, .tabbar.is-dragging .lt-unav__item { cursor: grabbing; user-select: none; }
+
+/* LTAnchoredOverlay: the whole label group, with its close button. */
+.lt-overlay {
+  position: fixed; z-index: 1000; display: flex; align-items: flex-start; gap: var(--space-2); max-width: 320px;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  background: var(--canvas-overlay); border: 1px solid var(--border-default); border-radius: var(--radius-2);
+  box-shadow: var(--shadow-overlay); animation: fade-in 100ms var(--ease-out);
+}
+.lt-overlay:focus { outline: none; }
+.lt-overlay__body { flex: 1; min-width: 0; }
+.lt-overlay__close { flex: none; }
+
+/* LTCheckbox: a 16px box in a 24px target. */
+.lt-checkbox { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); min-height: 24px; min-width: 24px; justify-content: center; cursor: pointer; flex: none; }
+.lt-checkbox__input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.lt-checkbox__box {
+  display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px;
+  border: 1px solid var(--border-default); border-radius: var(--radius-1); background: var(--canvas-default); color: var(--fg-on-emphasis);
+}
+.lt-checkbox.is-on .lt-checkbox__box { background: var(--accent-emphasis); border-color: var(--accent-emphasis); }
+.lt-checkbox__input:focus-visible + .lt-checkbox__box { outline: 2px solid var(--focus-outline); outline-offset: 2px; }
+
+/* LTRadioGroup and LTRadio. */
+.lt-radiogroup__list { display: flex; flex-direction: column; gap: var(--space-1); list-style: none; margin: var(--space-1) 0 0; padding: 0; }
+.lt-radio { position: relative; display: inline-flex; align-items: center; gap: var(--space-2); min-height: 24px; cursor: pointer; }
+.lt-radio__input { position: absolute; left: 0; top: 50%; width: 16px; height: 16px; margin: -8px 0 0; opacity: 0; cursor: pointer; }
+.lt-radio__dot {
+  flex: none; width: 16px; height: 16px; border: 1px solid var(--border-default); border-radius: 50%; background: var(--canvas-default);
+}
+.lt-radio.is-checked .lt-radio__dot { border: 4px solid var(--accent-emphasis); }
+.lt-radio__input:focus-visible + .lt-radio__dot { outline: 2px solid var(--focus-outline); outline-offset: 2px; }
+.lt-radio__label { font-weight: var(--weight-semibold); }
+
+/* LTPagination: Previous, the pages, Next; the current page bold, bordered
+   and filled, never by colour alone. */
+.lt-pagination { display: flex; align-items: center; justify-content: center; gap: var(--space-1); margin-top: var(--space-4); }
+.lt-pagination__page, .lt-pagination__step {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 var(--space-2);
+  border: 1px solid transparent; border-radius: var(--radius-2); color: var(--fg-default); text-decoration: none;
+}
+.lt-pagination__page:hover, a.lt-pagination__step:hover { border-color: var(--border-default); }
+.lt-pagination__page.is-current { background: var(--accent-emphasis); border-color: var(--accent-emphasis); color: var(--fg-on-emphasis); font-weight: var(--weight-bold); }
+.lt-pagination__step.is-off { color: var(--fg-disabled); }
+.lt-pagination__gap { min-width: 32px; text-align: center; color: var(--fg-muted); }
+
+/* The project switcher: groups with headings, links with a check column. */
+.lt-selpanel--switch { max-height: 440px; }
+.lt-selpanel__groups { flex: 1; min-height: 0; overflow-y: auto; padding: 0 var(--space-2) var(--space-2); }
+.lt-selpanel__group + .lt-selpanel__group { margin-top: var(--space-1); padding-top: var(--space-1); border-top: 1px solid var(--border-muted); }
+.lt-selpanel__group ul { list-style: none; margin: 0; padding: 0; }
+.lt-selpanel__group-title { padding: var(--space-2) var(--space-2) var(--space-1); font-size: var(--font-12); line-height: var(--lh-12); font-weight: var(--weight-bold); color: var(--fg-muted); }
+.lt-selpanel__link {
+  display: flex; align-items: center; gap: var(--space-2); min-height: 32px; padding: 0 var(--space-2);
+  border-radius: var(--radius-2); color: var(--fg-default); text-decoration: none;
+}
+.lt-selpanel__link:hover { background: var(--list-hover-bg); }
+.lt-selpanel__link:active { background: var(--list-active-bg); }
+.lt-selpanel__link:focus-visible { outline-offset: -2px; }
+.lt-selpanel__link.is-current { font-weight: var(--weight-bold); }
+.lt-selpanel__check { display: inline-flex; flex: none; width: 16px; color: var(--fg-default); }
 
 /* ---------------- toasts ---------------- */
 .lt-toasts { position: fixed; top: 72px; right: var(--space-4); z-index: 1100; display: flex; flex-direction: column; gap: var(--space-2); }
@@ -467,6 +593,29 @@ p, h1, h2, h3 { margin: 0; }
 .fy-panel { margin-top: var(--space-4); }
 .fy-state { width: min(1232px, 100% - 224px); margin: 0 auto; }
 
+/* The test case listing inside a project (v3 item 1). */
+.pp-head { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-2) 0 var(--space-4); min-height: 32px; }
+.pp-head__action { margin-left: auto; }
+.pp-picked { flex: none; font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
+.pp-list:focus { outline: none; }
+.pp-list:focus-visible { outline: 2px solid var(--focus-outline); outline-offset: 2px; }
+/* The listing's row: 16px by 12px, 12px gaps, the meta line 8px below the
+   title (test-entity-listing.md §3.4). */
+.tc-row { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4) var(--space-3); }
+/* A selected row: the orange bar and the grey fill (guidelines/README.md §1). */
+.tc-row.is-picked { background: var(--bg-selected); box-shadow: inset 4px 0 0 var(--highlight); }
+/* The checkbox centres on the title's line; its 24px target overflows the
+   20px slot. */
+.tc-row__pick { display: inline-flex; align-items: center; flex: none; height: var(--lh-14); }
+.tc-row__main { flex: 1; min-width: 0; }
+.tc-row__head { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.tc-row__title {
+  display: inline-block; min-width: 0; max-width: 100%; vertical-align: top;
+  font-weight: var(--weight-bold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tc-row__head .lt-labelgroup { flex: none; }
+.tc-row__meta { margin-top: var(--space-2); }
+
 /* Rows sit in one bordered container (project-listing.md delta 4). */
 .rows, .plist { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border-default); border-radius: var(--radius-2); }
 .rows > li + li, .plist > li + li { border-top: 1px solid var(--border-muted); }
@@ -495,8 +644,8 @@ p, h1, h2, h3 { margin: 0; }
 .clickrow { position: relative; }
 .clickrow__link::after { content: ''; position: absolute; inset: 0; }
 .pcard .clickrow__link::after { border-radius: var(--radius-2); }
-.clickrow:hover:not(:has(:is(button, .meta-hint, .lt-link:not(.clickrow__link)):hover)) .clickrow__link { text-decoration: underline; }
-.clickrow :is(button, .meta-hint, .lt-link:not(.clickrow__link)) { position: relative; z-index: 1; }
+.clickrow:hover:not(:has(:is(button, .meta-hint, .lt-link:not(.clickrow__link), .lt-checkbox):hover)) .clickrow__link { text-decoration: underline; }
+.clickrow :is(button, .meta-hint, .lt-link:not(.clickrow__link), .lt-checkbox) { position: relative; z-index: 1; }
 .clickrow__link:focus-visible { outline: none; }
 .clickrow:has(.clickrow__link:focus-visible) { outline: 2px solid var(--focus-outline); outline-offset: -2px; }
 .pcard.clickrow:has(.clickrow__link:focus-visible) { outline-offset: 2px; }
@@ -510,7 +659,7 @@ p, h1, h2, h3 { margin: 0; }
 .toolbar { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
 .toolbar__search { flex: 1; }
 section > .panel { margin-top: var(--space-3); }
-.showall { margin-top: var(--space-2); }
+.showall { margin-top: var(--space-3); }
 
 .prow { display: flex; align-items: flex-start; gap: var(--space-4); padding: var(--space-4) var(--space-5); }
 .prow__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
@@ -519,9 +668,17 @@ section > .panel { margin-top: var(--space-3); }
 .prow__actions { display: flex; align-items: center; gap: var(--space-1); flex: none; }
 
 .tags { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; }
-/* 24px tall: the minimum target (guidelines/README.md §9). */
-.tags__more.lt-btn--small { height: 24px; padding: 0 var(--space-1); color: var(--fg-muted); }
-.tags__more.lt-btn--small:hover { color: var(--fg-default); }
+/* v3 item 9: "+{n}", a pill like the tags it stands for, but a button: a
+   hover and pressed fill, and a 24px target around it (README §9). */
+.tags__more {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 var(--space-2);
+  border: 1px solid var(--border-default); border-radius: var(--radius-pill); background: var(--canvas-default);
+  color: var(--fg-muted); font-size: var(--font-12); font-weight: var(--weight-semibold); line-height: 1; cursor: pointer;
+}
+.tags__more { position: relative; }
+.tags__more::before { content: ''; position: absolute; inset: -2px; } /* the 24px target */
+.tags__more:hover { background: var(--btn-invisible-hover-bg); color: var(--fg-default); }
+.tags__more:active, .tags__more[aria-expanded="true"] { background: var(--btn-invisible-active-bg); color: var(--fg-default); }
 
 /* What needs you: milestone, test instances, ongoing actions. */
 .needs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-4); font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
