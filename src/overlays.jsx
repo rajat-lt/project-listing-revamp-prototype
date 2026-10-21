@@ -14,17 +14,18 @@ import { cx, placeFloating, LTTooltip, LTIconButton, LTButton, LTInputBox, LTTok
    no wider than the content it controls (guidelines/ltunderlinenav.md). The
    counter counts the rows in the tab (ux-text-guidelines.md §7). Documented
    props: navs (shape TBD → ltunderlinenav--with-counters), ariaLabel, size,
-   onClick. `current` marks the tab whose view is showing. */
-export function LTUnderlineNav({ navs, current, ariaLabel, size = 'medium', onClick }) {
+   onClick, onKeyDown. `current` marks the tab whose view is showing. Native
+   link dragging is off, so a tab can be dragged to a new place (tabbar.jsx). */
+export function LTUnderlineNav({ navs, current, ariaLabel, size = 'medium', onClick, onKeyDown }) {
   return (
     <div className={cx('lt-unav', `lt-unav--${size}`)}>
       <nav aria-label={ariaLabel}>
         <ul>
           {navs.map(t => (
-            <li key={t.id}>
-              <a href={t.href} aria-current={t.id === current ? 'page' : undefined}
+            <li key={t.id} data-tab={t.id}>
+              <a href={t.href} aria-current={t.id === current ? 'page' : undefined} draggable={false}
                 className={cx('lt-unav__item', t.id === current && 'is-current')}
-                onClick={e => onClick?.(e, t)}>
+                onClick={e => onClick?.(e, t)} onKeyDown={onKeyDown}>
                 <span className="lt-unav__label" data-text={t.label}>{t.label}</span>
                 {t.counter != null && <span className="lt-counter lt-counter--secondary">{t.counter}</span>}
               </a>
@@ -68,7 +69,7 @@ export function LTTabNav({ items, activeTab, ariaLabel, size = 'medium', onSelec
    URL. The selected one carries the orange bar and the grey fill; a grey
    fill alone is hover (guidelines/README.md §1). Documented props:
    ariaLabel, listItems (shape TBD → ltnavlist--nav-list; { id, label, meta,
-   href } here), selectedTab, handleSelectedTab, showTruncatedName. */
+   counter, href } here), selectedTab, handleSelectedTab, showTruncatedName. */
 export function LTNavList({ ariaLabel, listItems, selectedTab, handleSelectedTab, showTruncatedName = true }) {
   return (
     <nav aria-label={ariaLabel} className="lt-navlist">
@@ -78,15 +79,171 @@ export function LTNavList({ ariaLabel, listItems, selectedTab, handleSelectedTab
             <a href={i.href} aria-current={i.id === selectedTab ? 'page' : undefined}
               className={cx('lt-navlist__item', i.id === selectedTab && 'is-selected')}
               onClick={e => handleSelectedTab?.(e, i)}>
-              {showTruncatedName
-                ? <TruncText text={i.label} className="lt-navlist__label" />
-                : <span className="lt-navlist__label">{i.label}</span>}
+              <span className="lt-navlist__line">
+                {showTruncatedName
+                  ? <TruncText text={i.label} className="lt-navlist__label" />
+                  : <span className="lt-navlist__label">{i.label}</span>}
+                {i.counter != null && <span className="lt-counter lt-counter--secondary">{i.counter}</span>}
+              </span>
               {i.meta && <span className="lt-navlist__meta">{i.meta}</span>}
             </a>
           </li>
         ))}
       </ul>
     </nav>
+  )
+}
+
+/* ---------- LTActionMenu ----------
+   Quick actions or one selection (selectionVariant="single"). Every item has
+   an icon or none does; an unavailable item stays focusable, inactive, with
+   its reason written into the item; items take sentence case
+   (guidelines/ltactionmenu.md, ux-text-guidelines.md §2). Keyboard: arrows,
+   Home, End, Enter, Space, Esc, Tab. Documented props: customAnchor,
+   activeId, selectionVariant, width, open, onMenuToggle (story-verified).
+   `options` is TBD upstream, so its item shape here stands in for it. Carried
+   over from the automation details prototype, for the tab menu. */
+export function LTActionMenu({ customAnchor, options, onSelect, selectionVariant = '', activeId, width = 240,
+  align = 'end', ariaLabel, open: controlledOpen, onMenuToggle }) {
+  const [openState, setOpenState] = useState(false)
+  const open = controlledOpen ?? openState
+  const setOpen = v => { setOpenState(v); onMenuToggle?.(v) }
+  const [pos, setPos] = useState(null)
+  const anchorRef = useRef(null)
+  const menuRef = useRef(null)
+  const itemsRef = useRef([])
+  const id = useId()
+  const root = usePortalRoot()
+  const items = options.filter(o => !o.divider)
+
+  useLayoutEffect(() => {
+    if (!open || !menuRef.current || !anchorRef.current) return
+    const update = () => setPos(placeFloating(anchorRef.current, menuRef.current, { side: 'bottom', align, offset: 4 }))
+    update()
+    const sel = selectionVariant === 'single' ? items.findIndex(o => o.value === activeId) : 0
+    itemsRef.current[Math.max(0, sel)]?.focus({ preventScroll: true })
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => { window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true) }
+  }, [open, align])
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = e => {
+      if (!menuRef.current?.contains(e.target) && !anchorRef.current?.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  const close = (refocus = true) => { setOpen(false); if (refocus) anchorRef.current?.focus() }
+  const choose = o => { if (o.inactive) return; close(); onSelect?.(o) }
+  const onKeyDown = e => {
+    const list = itemsRef.current.filter(Boolean)
+    const i = list.indexOf(document.activeElement)
+    if (e.key === 'ArrowDown') { e.preventDefault(); list[(i + 1) % list.length]?.focus() }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); list[(i - 1 + list.length) % list.length]?.focus() }
+    else if (e.key === 'Home') { e.preventDefault(); list[0]?.focus() }
+    else if (e.key === 'End') { e.preventDefault(); list[list.length - 1]?.focus() }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close() }
+    else if (e.key === 'Tab') close(false)
+  }
+
+  const trigger = React.cloneElement(customAnchor, {
+    ref: anchorRef,
+    'aria-haspopup': 'menu',
+    'aria-expanded': open,
+    'aria-controls': open ? id : undefined,
+    onClick: () => setOpen(!open),
+    onKeyDown: e => { if (e.key === 'ArrowDown' && !open) { e.preventDefault(); setOpen(true) } },
+  })
+
+  let n = -1
+  return (
+    <>
+      {trigger}
+      {open && createPortal(
+        <div ref={menuRef} id={id} role="menu" aria-label={ariaLabel} className="lt-menu"
+          style={{ width, top: pos?.top ?? -9999, left: pos?.left ?? -9999 }} onKeyDown={onKeyDown}>
+          {options.map((o, k) => {
+            if (o.divider) return <div key={`d${k}`} role="separator" className="lt-menu__divider" />
+            n += 1
+            const idx = n
+            const checked = selectionVariant === 'single' ? o.value === activeId : undefined
+            const Icon = o.icon
+            return (
+              <button key={o.value ?? o.label} type="button" tabIndex={-1}
+                ref={el => { itemsRef.current[idx] = el }}
+                role={selectionVariant === 'single' ? 'menuitemradio' : 'menuitem'}
+                aria-checked={checked} aria-disabled={o.inactive || undefined}
+                className={cx('lt-menu__item', o.inactive && 'is-inactive', o.description && 'has-description')}
+                onClick={() => choose(o)}>
+                {selectionVariant === 'single'
+                  ? <span className="lt-menu__check" aria-hidden="true">{checked && <Check size={16} />}</span>
+                  : Icon && <Icon size={16} aria-hidden="true" className="lt-menu__icon" />}
+                <span className="lt-menu__text">
+                  <span className="lt-menu__label">{o.label}</span>
+                  {o.description && <span className="lt-menu__desc">{o.description}</span>}
+                </span>
+              </button>
+            )
+          })}
+        </div>, root)}
+    </>
+  )
+}
+
+/* ---------- LTAnchoredOverlay ----------
+   An overlay attached to a button (COMPONENTS.md); its "Custom Component
+   Anchor" story takes any anchor, here `anchor`. Documented props: align,
+   ariaLabel, closeOverlay, overlayClassName. A press opens it and moves focus
+   in; its close button, Esc, a click outside or focus leaving it closes it
+   and hands focus back to the anchor. */
+export function LTAnchoredOverlay({ anchor, children, align = 'start', ariaLabel, closeOverlay = false, overlayClassName }) {
+  const [open, setOpen] = useState(false)
+  const anchorRef = useRef(null)
+  const boxRef = useRef(null)
+  const id = useId()
+  const pos = useAnchoredPlacement(open, anchorRef, boxRef, { side: 'bottom', align, offset: 4 })
+  const close = (refocus = true) => { setOpen(false); if (refocus) anchorRef.current?.focus() }
+  useEffect(() => { if (closeOverlay) setOpen(false) }, [closeOverlay])
+  useEffect(() => {
+    if (!open) return
+    boxRef.current?.focus()
+    const onDown = e => {
+      if (boxRef.current?.contains(e.target) || anchorRef.current?.contains(e.target)) return
+      close(false)
+    }
+    document.addEventListener('pointerdown', onDown, true)
+    return () => document.removeEventListener('pointerdown', onDown, true)
+  }, [open])
+  const trigger = React.cloneElement(anchor, {
+    ref: anchorRef,
+    'aria-haspopup': 'dialog',
+    'aria-expanded': open,
+    'aria-controls': open ? id : undefined,
+    onClick: e => { anchor.props.onClick?.(e); open ? close(false) : setOpen(true) },
+  })
+  return (
+    <>
+      {trigger}
+      {open && createPortal(
+        <div ref={boxRef} id={id} role="dialog" aria-label={ariaLabel} tabIndex={-1}
+          className={cx('lt-overlay', overlayClassName)} style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999 }}
+          onKeyDown={e => {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close() }
+            if (e.key === 'Tab') {
+              const f = [...boxRef.current.querySelectorAll('button')]
+              const atEnd = !e.shiftKey && document.activeElement === f[f.length - 1]
+              const atStart = e.shiftKey && (document.activeElement === f[0] || document.activeElement === boxRef.current)
+              if (atEnd || atStart) { e.preventDefault(); close() }
+            }
+          }}>
+          <div className="lt-overlay__body">{children}</div>
+          <LTIconButton icon={X} ariaLabel="Close" variant="invisible" size="xsmall" tooltipDirection="n"
+            className="lt-overlay__close" onClick={() => close()} />
+        </div>, document.body)}
+    </>
   )
 }
 
@@ -133,9 +290,9 @@ export function LTSegmentedControl({ options, selectedValue, onChange, ariaLabel
   )
 }
 
-/* Placement beside the anchor, shared by LTSelectPanel and LTPopover. The
-   caret points at the anchor's centre, however the box was clamped. */
-function useAnchoredPlacement(open, anchorRef, boxRef, { side = 'bottom', align = 'start', offset = 4, flip = true } = {}) {
+/* Placement beside the anchor, shared by the panels and overlays. The caret
+   points at the anchor's centre, however the box was clamped. */
+export function useAnchoredPlacement(open, anchorRef, boxRef, { side = 'bottom', align = 'start', offset = 4, flip = true } = {}) {
   const [pos, setPos] = useState(null)
   useLayoutEffect(() => {
     if (!open || !anchorRef.current || !boxRef.current) return
@@ -163,13 +320,17 @@ function useAnchoredPlacement(open, anchorRef, boxRef, { side = 'bottom', align 
    Documented props: title, subtitle, buttonLabel, label, ariaLabel, options
    (shape TBD → ltselectpanel--select-panel; { value, label, leadingVisual }
    here), defaultValues, onApply, cancelButtonText ("Reset", the component's
-   default), showCountOnCta.
+   default), showCountOnCta (false by default, as in the component).
+   The manifest has no prop for the search field's placeholder, the empty
+   list's text or the width, so searchPlaceholder, emptyText and width are
+   this look-alike's own (spec §9).
    The trigger is the filter-bar button of guidelines/README.md §5: outline,
    the applied count in `counter`, a caret. Its accessible name says both what
    it controls and what is chosen ("Created by: 2 selected"), as
    ltselectpanel.md asks; the visible text stays "Created by 2". */
 export function LTSelectPanel({ title, subtitle, buttonLabel, label, ariaLabel, options, defaultValues = [], onApply,
-  cancelButtonText = 'Reset', showCountOnCta = true, searchPlaceholder = 'Filter', width = 320 }) {
+  cancelButtonText = 'Reset', showCountOnCta = false, searchPlaceholder = 'Filter', emptyText = '0 options',
+  width = 320 }) {
   const [open, setOpen] = useState(false)
   const [picked, setPicked] = useState(defaultValues)
   const [query, setQuery] = useState('')
@@ -247,7 +408,7 @@ export function LTSelectPanel({ title, subtitle, buttonLabel, label, ariaLabel, 
               })}
             </ul>
           ) : (
-            <p className="lt-selpanel__empty" role="status">0 matches for "{query.trim()}"</p>
+            <p className="lt-selpanel__empty" role="status">{q ? `0 matches for "${query.trim()}"` : emptyText}</p>
           )}
           <div className="lt-selpanel__foot">
             <LTButton variant="invisible" size="small" label={cancelButtonText} inactive={!picked.length}

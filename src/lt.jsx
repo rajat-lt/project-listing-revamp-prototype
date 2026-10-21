@@ -6,7 +6,7 @@
 // details prototype, so the prototypes read as one product.
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Search, CircleAlert, CircleCheck, TriangleAlert, Info, CircleSlash, LoaderCircle } from 'lucide-react'
+import { X, Search, CircleAlert, CircleCheck, TriangleAlert, Info, CircleSlash, LoaderCircle, Route, Check, Minus } from 'lucide-react'
 import { emailFor, fmtDateTime, fmtRelative, isRelative } from './format.js'
 
 export const cx = (...a) => a.filter(Boolean).join(' ')
@@ -304,20 +304,23 @@ export function LTAvatar({ initials, name, size = 32, decorative = false }) {
 }
 
 /* ---------- LTInputBox ----------
-   Search fields keep variant="default", the one with a background
-   (guidelines/ltinputbox.md). With a `label` it is a form field: the label
-   above, the required indicator, then the validation message and the
-   caption below. The message leads with the fix, and an icon and words
-   carry the error, never the border colour alone. */
+   variant="default", the component's default, has a background, which
+   search fields must keep (guidelines/ltinputbox.md); variant="white" has
+   none, and the form fields of the product's Create Test Run drawer pass it.
+   With a `label` it is a form field: the label above, the required
+   indicator, then the validation message and the caption below. The
+   message leads with the fix, and an icon and words carry the error, never
+   the border colour alone. */
 export function LTInputBox({ value, onChange, placeholder, ariaLabel = 'Search', type = 'search', size = 'medium',
   allowClearSearch = type === 'search', forwardRef, onKeyDown, keyshortcuts, className, extraStyle,
-  label, required = false, caption, validationStatus = 'default', validationMessage, id, maxLength }) {
+  label, required = false, caption, validationStatus = 'default', validationMessage, id, maxLength,
+  variant = 'default' }) {
   const autoId = useId()
   const fid = id || autoId
   const lead = type === 'search'
   const error = validationStatus === 'error' && validationMessage
   const box = (
-    <div className={cx('lt-input', `lt-input--${size}`, !lead && 'lt-input--plain', error && 'is-error', !label && className)}
+    <div className={cx('lt-input', `lt-input--${size}`, `lt-input--${variant}`, !lead && 'lt-input--plain', error && 'is-error', !label && className)}
       style={label ? undefined : extraStyle}>
       {lead && <Search size={16} aria-hidden="true" className="lt-input__lead" />}
       <input id={fid} ref={forwardRef} type={type} value={value} placeholder={placeholder}
@@ -514,5 +517,115 @@ export function LTLoader({ size = 'medium', heading, description }) {
       {description && <p className="lt-loader__desc">{description}</p>}
       {!heading && <span className="vh">Loading</span>}
     </div>
+  )
+}
+
+/* ---------- the test case and test run icons (v3 item 8) ----------
+   Rajat's screenshot of 21 Oct 2026 gives the product's two icons. The test
+   run icon is lucide's Route turned upside down (the same geometry, mirrored
+   top to bottom). No lucide icon has the test case icon's tick and cross
+   (file-check-corner and file-x-corner each put one mark at the bottom
+   right), so it is drawn here on lucide's 24px grid and 2px stroke. Both are
+   decoration beside a number; the meaning travels in words to screen readers
+   (spec C18). */
+export function TestCaseIcon({ size = 24, className, ...rest }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round" className={className} {...rest}>
+      <path d="M4 9V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-8" />
+      <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+      <path d="m3 13 2 2 4-4" />
+      <path d="m3 17 4 4" />
+      <path d="m7 17-4 4" />
+    </svg>
+  )
+}
+export const TestRunIcon = ({ style, ...rest }) => <Route {...rest} style={{ ...style, transform: 'scaleY(-1)' }} />
+
+/* ---------- LTCheckbox ----------
+   Documented props: checked, indeterminate, ariaLabel, label, onChange, id.
+   The box is 16px inside a 24px target (guidelines/README.md §9). */
+export function LTCheckbox({ checked = false, indeterminate = false, onChange, ariaLabel, label, id, className }) {
+  const ref = useRef(null)
+  useEffect(() => { if (ref.current) ref.current.indeterminate = indeterminate }, [indeterminate])
+  const on = checked || indeterminate
+  return (
+    <label className={cx('lt-checkbox', on && 'is-on', className)}>
+      <input ref={ref} id={id} type="checkbox" className="lt-checkbox__input" checked={checked}
+        aria-label={label ? undefined : ariaLabel} onChange={e => onChange?.(e.target.checked)} />
+      <span className="lt-checkbox__box" aria-hidden="true">
+        {indeterminate ? <Minus size={12} strokeWidth={3} /> : checked ? <Check size={12} strokeWidth={3} /> : null}
+      </span>
+      {label && <span className="lt-checkbox__label">{label}</span>}
+    </label>
+  )
+}
+
+/* ---------- LTRadioGroup ----------
+   One group label, vertical options, one tab stop with arrow keys (native
+   radios), the most likely option pre-checked, the caption under the group
+   (guidelines/ltradiogroup.md). A required group carries its mark on the
+   group, never on an option (guidelines/ltradio.md). Documented props:
+   label, caption, options (shape TBD → ltradiogroup--radio-group),
+   defaultCheckedValue, onChange, groupName, ariaRequired, id. */
+export function LTRadioGroup({ label, caption, options, defaultCheckedValue, onChange, groupName, ariaRequired = false,
+  required = false, id, className }) {
+  const autoId = useId()
+  const gid = id || autoId
+  const [value, setValue] = useState(defaultCheckedValue)
+  return (
+    <div className={cx('lt-field', 'lt-radiogroup', className)}>
+      <span id={`${gid}-label`} className="lt-field__label">
+        {label}{required && <span className="lt-field__req" aria-hidden="true"> *</span>}
+      </span>
+      <ul role="radiogroup" aria-labelledby={`${gid}-label`} aria-required={ariaRequired || undefined}
+        aria-describedby={caption ? `${gid}-cap` : undefined} className="lt-radiogroup__list">
+        {options.map(o => (
+          <li key={o.value}>
+            <label className={cx('lt-radio', value === o.value && 'is-checked')}>
+              <input type="radio" className="lt-radio__input" name={groupName ?? gid} value={o.value}
+                checked={value === o.value} onChange={() => { setValue(o.value); onChange?.(o.value) }} />
+              <span className="lt-radio__dot" aria-hidden="true" />
+              <span className="lt-radio__label">{o.label}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {caption && <p id={`${gid}-cap`} className="lt-field__caption">{caption}</p>}
+    </div>
+  )
+}
+
+/* ---------- LTPagination ----------
+   Pagination is navigation: every page has its own URL, and Previous and Next
+   point to the adjacent pages (guidelines/ltpagination.md). Page numbers show
+   by default; the current page is marked by more than colour (bold and a
+   border) and by aria-current. Nothing renders when everything fits on one
+   page. Documented props: currentPage, showPages, marginPageCount,
+   surroundingPageCount, onChange, and pageCount (story-verified). `hrefFor`
+   builds each page's URL. */
+export function LTPagination({ currentPage, pageCount, showPages = true, marginPageCount = 1, surroundingPageCount = 2,
+  hrefFor, onChange }) {
+  if (!pageCount || pageCount <= 1) return null
+  const pages = []
+  for (let n = 1; n <= pageCount; n++) {
+    const edge = n <= marginPageCount || n > pageCount - marginPageCount
+    const near = Math.abs(n - currentPage) <= surroundingPageCount
+    if (edge || near) pages.push(n)
+    else if (pages[pages.length - 1] !== 'gap') pages.push('gap')
+  }
+  const step = (n, text, rel) => (n < 1 || n > pageCount
+    ? <span className="lt-pagination__step is-off" aria-hidden="true">{text}</span>
+    : <a className="lt-pagination__step" href={hrefFor(n)} rel={rel} onClick={() => onChange?.(n)}>{text}</a>)
+  return (
+    <nav className="lt-pagination" aria-label="Pagination">
+      {step(currentPage - 1, 'Previous', 'prev')}
+      {showPages && pages.map((n, i) => (n === 'gap'
+        ? <span key={`g${i}`} className="lt-pagination__gap" aria-hidden="true">…</span>
+        : <a key={n} href={hrefFor(n)} aria-current={n === currentPage ? 'page' : undefined}
+          aria-label={`Page ${n}`} className={cx('lt-pagination__page', n === currentPage && 'is-current')}
+          onClick={() => onChange?.(n)}>{n}</a>))}
+      {step(currentPage + 1, 'Next', 'next')}
+    </nav>
   )
 }

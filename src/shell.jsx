@@ -12,6 +12,7 @@ import {
   Bell, Coins, Clock, Megaphone,
 } from 'lucide-react'
 import { LTTooltip, LTIconButton, LTButton, LTAvatar, cx } from './lt.jsx'
+import { ProjectCrumb } from './switcher.jsx'
 
 const PRIMARY_NAV = [
   ['home', 'Home', House], ['kaneai', 'KaneAI', Bot, true], ['kane-cli', 'Kane CLI', SquareTerminal],
@@ -91,17 +92,30 @@ export function PlatformSidebar({ active = 'test-manager' }) {
 }
 
 /**
- * Top bar at depth 1: the plain label "Test Manager", since a one-item
- * breadcrumb is not navigation (topbar.md §1). Test Manager's right cluster
+ * Top bar. At depth 1, the plain label "Test Manager", since a one-item
+ * breadcrumb is not navigation (topbar.md §1). Inside a project, depth 2: the
+ * breadcrumb "Test Manager / {project}" (test-entity-listing.md §1), every
+ * crumb a link (guidelines/ltbreadcrumbs.md), the project's with its switcher
+ * caret (switcher.jsx). Test Manager's right cluster
  * (§2): Credits, a separator, Recent Tests, Announcements, then the constant
  * bell, avatar and Upgrade Now. What Credits opens is unconfirmed (§8 q1), so
  * it, Recent Tests and Announcements answer with a toast. The bell opens the
  * notification-center prototype, where the panel lives.
  */
-export function TopBar({ onStub }) {
+export function TopBar({ onStub, project, switchGroups, switchState }) {
   return (
     <header className="topbar">
-      <p className="topbar-label">Test Manager</p>
+      {project ? (
+        <nav aria-label="Breadcrumb">
+          <ol className="crumbs">
+            <li><a className="crumb" href="#/">Test Manager</a></li>
+            <li>
+              <span className="crumb-sep" aria-hidden="true">/</span>
+              <ProjectCrumb project={project} groups={switchGroups} state={switchState} />
+            </li>
+          </ol>
+        </nav>
+      ) : <p className="topbar-label">Test Manager</p>}
       <div className="topbar-right">
         {/* "Credits: 20k": lowercase k, no space before the colon (topbar.md §6 delta 1). */}
         <LTButton variant="outline" size="small" leadingIcon={Coins} trailingIcon={ChevronDown} label="Credits: 20k"

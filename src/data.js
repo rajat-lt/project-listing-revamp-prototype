@@ -111,7 +111,8 @@ export const PROJECTS = [
     id: 'desktop-website', name: 'Desktop website', tags: ['dev', 'stage', 'report', 'Zephyr Scale Import'],
     testCases: 5200, automatedPct: 74, testRuns: 87,
     createdBy: 'Gabbar Singh', updatedAt: ago(6, 4, 30), lastActionAt: ago(6, 4, 30),
-    unassigned: 0, needConfig: 0, actions: [], visitedAt: ago(6, 2, 48), starred: true,
+    // Starred but not visited lately, so the switcher has a Starred group.
+    unassigned: 0, needConfig: 0, actions: [], visitedAt: null, starred: true,
   },
   {
     id: 'blog-website', name: 'Blog website', tags: [], testCases: 64, automatedPct: 25, testRuns: 2,
@@ -208,3 +209,84 @@ export const isInactive = p => NOW - p.lastActionAt > INACTIVE_DAYS * DAY
 /** Calendar days from today to a date, for "2 days left". */
 const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 export const daysUntil = d => Math.round((startOfDay(d) - startOfDay(NOW)) / DAY)
+
+/*
+ * Test cases, for the test case listing inside a project (v3 item 1, 21 Oct
+ * 2026: "add any dummy TC data"). Titles come only from mock-data.md's test
+ * case and test instance name lists; IDs follow `#TC-` with 1 to 5 digits;
+ * people are the cast; each test case shows an execution status
+ * (mock-data.md: the execution vocabulary applies to test cases too). The
+ * test cases assigned to you in For You open the list, under their own IDs.
+ * GAP: mock-data.md has no folder names; these three come from Rajat's
+ * project-actions-listing.md ("Regression / Checkout", "Payments"). It has no
+ * priority, platform or type values either, so the meta line leaves them out.
+ */
+const TC_TITLES = [
+  'Filter and Verify Product Search Results',
+  'Attempt Signup and Verify Preferences Screen Persistence',
+  'Complete Purchase Using Gift Card and Credit Card',
+  'Verify account lock after multiple failed login attempts',
+  'Paste the shadow and non-shadow propeties in properties filter and verify the diplayed properties',
+  'Verify the siteplan shown on Tourbook property page when property has Leasing and Standard siteplan',
+  'Verify the building specification and Units details table on properties details page with source data',
+  'Verify OTP expiry after 60 seconds on the login screen',
+  'Validate cart total after applying two coupon codes',
+  'Check invoice download in both PDF and CSV formats',
+  'Verify session timeout redirects to login with the return URL preserved',
+  'Validate bulk upload of 500 records shows progress and a summary',
+  'Verify dark mode persists across page reloads and new tabs',
+  'Check filter chips clear individually and via Clear all',
+]
+const CAST = ['Ritika Sharma', 'Mahendra Damodardas Baahubali', 'Darth Vader', 'Oppenheimer', 'Mehmed Dracul',
+  'George Orwell', 'Gabbar Singh', 'Kokushibo']
+export const FOLDERS = [
+  { id: 'regression', name: 'Regression' },
+  { id: 'checkout', name: 'Checkout' },
+  { id: 'payments', name: 'Payments' },
+]
+const TC_STATUS = ['passed', 'not started', 'failed', 'passed', 'skipped', 'passed', 'not started', 'failed', 'passed']
+// The test case tags the pattern records (test-entity-listing.md §2).
+const TC_TAGS = [['positive'], [], ['negative'], ['edge'], ['positive', 'edge'], [], ['negative'], ['positive']]
+
+const tcCache = new Map()
+/** Every test case of a project, active or archived, most recently updated first. */
+export function testCasesOf(project) {
+  if (tcCache.has(project.id)) return tcCache.get(project.id)
+  const seed = [...PROJECTS, ...ARCHIVED].findIndex(p => p.id === project.id) + 1
+  const known = []
+  ASSIGNED.filter(t => t.project === project.id).forEach(t => {
+    if (!known.some(k => k.tc === t.tc)) known.push(t)
+  })
+  const used = new Set(known.map(k => k.tc))
+  const out = []
+  let k = 0
+  for (let i = 0; i < project.testCases; i++) {
+    const folder = FOLDERS[[0, 0, 1, 2][i % 4]].id
+    if (i < known.length) {
+      const t = known[i]
+      out.push({ id: t.tc, title: t.title, status: TC_STATUS[(i + seed) % TC_STATUS.length], tags: TC_TAGS[(i + seed) % TC_TAGS.length],
+        folder, by: t.by, updatedAt: ago(i + 1, (i * 5) % 12, (i * 17) % 60) })
+      continue
+    }
+    // A different 1-to-5-digit ID for each test case: 7919 is prime, so the
+    // multiples never repeat below 99,000.
+    let id
+    do { id = `#TC-${100 + ((k++ * 7919 + seed * 104729) % 99000)}` } while (used.has(id))
+    used.add(id)
+    out.push({
+      id, title: TC_TITLES[(i * 5 + seed) % TC_TITLES.length], status: TC_STATUS[(i + seed) % TC_STATUS.length],
+      tags: TC_TAGS[(i * 3 + seed) % TC_TAGS.length], folder, by: CAST[(i * 3 + seed) % CAST.length],
+      updatedAt: ago((Math.floor(i / 3) % 400) + 1, (i * 7) % 24, (i * 13) % 60),
+    })
+  }
+  out.sort((a, b) => b.updatedAt - a.updatedAt)
+  tcCache.set(project.id, out)
+  return out
+}
+
+/** All milestones of a project, yours or not: the project nav's count. */
+export const milestonesIn = projectId => MILESTONES.filter(m => m.project === projectId)
+
+/** A project by its ID, active or archived. */
+export const projectById = id => PROJECTS.find(p => p.id === id) ?? ARCHIVED.find(p => p.id === id) ?? null
+export const isArchived = id => ARCHIVED.some(p => p.id === id)

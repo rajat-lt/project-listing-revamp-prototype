@@ -1,12 +1,13 @@
 // Your Projects (brief 4 to 11) and Archived (brief 12), with the changes of
-// 21 Oct 2026 (v2 items 4 to 7). Spec §3.4, §3.5 and §4.
+// 21 Oct 2026 (v2 items 4 to 7, v3 items 7 to 9). Spec §3.4, §3.5 and §4.
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Star, Flag, ListTodo, List, LayoutGrid, FileText, CirclePlay } from 'lucide-react'
+import { Star, Flag, ListTodo, List, LayoutGrid } from 'lucide-react'
 import {
   cx, announce, LTLink, LTTag, LTLabelGroup, LTMetaData, MetaLine, LTButton, LTIconButton, LTInlineMessage, LTProgressBar,
-  LTTestStatusLabel, StatusGlyph, LTInputBox, LTBlankSlate, LTLoader, LTFlash, LTAvatar, PersonHint, TimeHint,
+  LTTestStatusLabel, StatusGlyph, LTInputBox, LTBlankSlate, LTLoader, LTFlash, LTAvatar, LTPagination, PersonHint, TimeHint,
+  TestCaseIcon, TestRunIcon,
 } from './lt.jsx'
-import { LTSegmentedControl, LTSelectPanel, LTPopover } from './overlays.jsx'
+import { LTSegmentedControl, LTSelectPanel, LTPopover, LTAnchoredOverlay } from './overlays.jsx'
 import { PROJECTS, ARCHIVED, NOW, isInactive, nextMilestoneOf } from './data.js'
 import { fmtDate, fmtCount, fmtDuration, initials } from './format.js'
 
@@ -23,39 +24,39 @@ function ViewToggle({ view, onView }) {
 
 /* ---------- shared pieces of a row and a card ---------- */
 
-/* Tags in an LTLabelGroup: three at most, then "Show {n} More", so every tag
-   stays reachable (guidelines/ltlabelgroup.md). */
+/* Tags in an LTLabelGroup: three at most, then a "+{n}" that opens the whole
+   group in an anchored overlay (v3 item 9), as Primer's LabelGroup does with
+   overflowStyle="overlay": its button shows "+11" and is named "Show +11
+   more" (primer.style, read 21 Oct 2026). Every tag stays reachable
+   (guidelines/ltlabelgroup.md). "+1" is a button: it opens something in
+   place (guidelines/README.md §5). Spec C22. */
 const MAX_TAGS = 3
-function ProjectTags({ tags }) {
-  const [all, setAll] = useState(false)
+function ProjectTags({ tags, name }) {
   if (!tags.length) return null
   const hidden = tags.length - MAX_TAGS
+  const group = list => <LTLabelGroup>{list.map(t => <LTTag key={t} text={t} variant="blueAccent" />)}</LTLabelGroup>
   return (
     <div className="tags">
-      <LTLabelGroup>
-        {(all ? tags : tags.slice(0, MAX_TAGS)).map(t => <LTTag key={t} text={t} variant="blueAccent" />)}
-      </LTLabelGroup>
+      {group(tags.slice(0, MAX_TAGS))}
       {hidden > 0 && (
-        <LTButton variant="invisible" size="small" className="tags__more" aria-expanded={all}
-          label={all ? 'Show Less' : `Show ${hidden} More`} onClick={() => setAll(v => !v)} />
+        <LTAnchoredOverlay ariaLabel={`Tags of ${name}`} overlayClassName="tags-overlay"
+          anchor={<button type="button" className="tags__more" aria-label={`Show +${hidden} more ${hidden === 1 ? 'tag' : 'tags'}`}>+{hidden}</button>}>
+          {group(tags)}
+        </LTAnchoredOverlay>
       )}
     </div>
   )
 }
 
 /* Brief 4: "total TC count (automated TC percentage)" and the test run count.
-   v2 item 6 adds an icon to each. The icons join the words rather than
-   replace them: an icon alone would need a tooltip to say what it counts,
-   and guidelines/lttooltip.md never hides essential information in one. The
-   icons are placeholders; icons.md names none for either (spec §9). */
-const testCasesText = p => (p.testCases
-  ? `${plural(p.testCases, 'test case', 'test cases')} (${p.automatedPct}% automated)`
-  : '0 test cases')
+   v3 item 8: the product's own two icons stand for the words, which leave the
+   line; screen readers still hear them (spec C18). */
+const testCasesText = p => (p.testCases ? `${fmtCount(p.testCases)} (${p.automatedPct}% automated)` : '0')
 const TestCaseCount = ({ p, withShare = true, lead = false }) => (
-  <LTMetaData leadingIcon={FileText} showLeadingDot={!lead}
-    value={withShare ? testCasesText(p) : plural(p.testCases, 'test case', 'test cases')} />
+  <LTMetaData leadingIcon={TestCaseIcon} showLeadingDot={!lead} label="Test cases"
+    value={withShare ? testCasesText(p) : fmtCount(p.testCases)} />
 )
-const TestRunCount = ({ n }) => <LTMetaData leadingIcon={CirclePlay} value={plural(n, 'test run', 'test runs')} />
+const TestRunCount = ({ n }) => <LTMetaData leadingIcon={TestRunIcon} label="Test runs" value={fmtCount(n)} />
 
 /* v2 item 6: the name shows its email and the relative date its full date
    and time, on hover and focus (PersonHint, TimeHint; spec C13, C14). */
@@ -181,13 +182,15 @@ function Inactive({ p }) {
    controls inside it (tags, counts, the actions popover, Create Test Run,
    the star, and the name and date hints) sit above that and work as before. */
 
-function ProjectRow({ p, runs, starred, onStar, onOpen, onCreateRun, onStub }) {
+const projectHref = p => `#/project/${p.id}`
+
+function ProjectRow({ p, runs, starred, onStar, onCreateRun, onStub }) {
   return (
     <li className="prow clickrow" data-pid={p.id}>
       <div className="prow__main">
         <div className="prow__head">
-          <h3 className="prow__title"><LTLink label={p.name} className="clickrow__link" onClick={stop(() => onOpen(p))} /></h3>
-          <ProjectTags tags={p.tags} />
+          <h3 className="prow__title"><LTLink label={p.name} href={projectHref(p)} className="clickrow__link" /></h3>
+          <ProjectTags tags={p.tags} name={p.name} />
         </div>
         <MetaLine>
           <TestCaseCount p={p} lead />
@@ -208,14 +211,14 @@ function ProjectRow({ p, runs, starred, onStar, onOpen, onCreateRun, onStub }) {
 
 /* The grid card carries the row's facts, rearranged (spec §3.4). No card
    component exists among the 69, so it is composed, as SmartUI's are. */
-function ProjectCard({ p, runs, starred, onStar, onOpen, onCreateRun, onStub }) {
+function ProjectCard({ p, runs, starred, onStar, onCreateRun, onStub }) {
   return (
     <li className="pcard clickrow" data-pid={p.id}>
       <div className="pcard__head">
-        <h3 className="pcard__title"><LTLink label={p.name} className="clickrow__link" onClick={stop(() => onOpen(p))} /></h3>
+        <h3 className="pcard__title"><LTLink label={p.name} href={projectHref(p)} className="clickrow__link" /></h3>
         <StarToggle p={p} starred={starred} onStar={onStar} />
       </div>
-      <ProjectTags tags={p.tags} />
+      <ProjectTags tags={p.tags} name={p.name} />
       <MetaLine>
         <TestCaseCount p={p} withShare={false} lead />
         <TestRunCount n={runs} />
@@ -246,21 +249,22 @@ const RECENT_MAX = 4
 const byName = (a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })
 const byUpdated = (a, b) => b.updatedAt - a.updatedAt
 
-export function YourProjects({ state, view, onView, starred, onStar, visits, runsAdded, onOpenProject, onCreateRun, onStub }) {
+export function YourProjects({ state, view, onView, starred, onStar, visits, runsAdded, showAll, page, onCreateRun, onStub }) {
   const projects = state === 'empty' ? [] : PROJECTS
   const [query, setQuery] = useState('')
   const [createdBy, setCreatedBy] = useState([])
   const [tags, setTags] = useState([])
-  const [showAll, setShowAll] = useState(false)
   const filtering = Boolean(query.trim() || createdBy.length || tags.length)
   const listRef = useRef(null)
-  const revealRef = useRef(null)
 
   /* v2 item 7, progressive disclosure: the tab opens on your projects, the
      starred ones first (answer 7), then the ones you used most recently (up
-     to 4, brief 5). Show All adds the rest below them, most recently updated
-     first, so nothing you already see moves. The order is set when the tab
-     opens, so a star or a visit never moves a row under the pointer. */
+     to 4, brief 5). Show All (v3 item 7) is a link to the whole list,
+     #/projects/all, where the rest follow, most recently updated first, so
+     nothing already on screen moves. There it is gone, and there is no Show
+     Less: the whole list paginates, 20 a page, which a collapse would fight.
+     The order is set when the tab opens, so a star or a visit never moves a
+     row under the pointer. */
   const starredRef = useRef(starred)
   starredRef.current = starred
   const visitsRef = useRef(visits)
@@ -275,13 +279,20 @@ export function YourProjects({ state, view, onView, starred, onStar, visits, run
   // A search or a filter looks through every project, in the same order.
   const q = query.trim().toLowerCase()
   const everything = [...order.yours, ...order.rest]
-  const list = filtering
+  const matched = filtering
     ? everything
       .filter(p => !q || p.name.toLowerCase().includes(q))
       .filter(p => !createdBy.length || createdBy.includes(p.createdBy))
       .filter(p => !tags.length || p.tags.some(t => tags.includes(t)))
     : showAll || !order.yours.length ? everything : order.yours
-  const canToggle = !filtering && order.yours.length > 0 && order.rest.length > 0
+  const canShowAll = !filtering && !showAll && order.yours.length > 0 && order.rest.length > 0
+  // The whole list (and any search or filter result) pages at 20
+  // (guidelines/ltpagination.md); nothing renders while it fits one page.
+  const PAGE_SIZE = 20
+  const paged = filtering || showAll
+  const pageCount = paged ? Math.max(1, Math.ceil(matched.length / PAGE_SIZE)) : 1
+  const cur = Math.min(Math.max(1, page), pageCount)
+  const list = paged ? matched.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE) : matched
 
   // The result count, for screen readers, once typing pauses.
   const first = useRef(true)
@@ -293,26 +304,21 @@ export function YourProjects({ state, view, onView, starred, onStar, visits, run
     return () => clearTimeout(t)
   }, [filterKey])
 
-  // Show All moves focus to the first project it revealed.
+  // Show All moves focus to the first project it revealed, and says how
+  // many projects the list now holds.
+  const firstShow = useRef(true)
   useEffect(() => {
-    if (!revealRef.current) return
-    listRef.current?.querySelector(`[data-pid="${revealRef.current}"] .clickrow__link`)?.focus()
-    revealRef.current = null
+    if (firstShow.current) { firstShow.current = false; return }
+    if (!showAll) return
+    listRef.current?.querySelector(`[data-pid="${order.rest[0]?.id}"] .clickrow__link`)?.focus()
+    announce(plural(everything.length, 'project', 'projects'))
   }, [showAll])
-  const toggleAll = () => {
-    if (!showAll) revealRef.current = order.rest[0]?.id
-    announce(plural(showAll ? order.yours.length : everything.length, 'project', 'projects'))
-    setShowAll(v => !v)
-  }
 
   const creators = [...new Set(projects.map(p => p.createdBy))].sort(byName)
     .map(n => ({ value: n, label: n, leadingVisual: <LTAvatar initials={initials(n)} name={n} size={20} decorative /> }))
   const allTags = [...new Set(projects.flatMap(p => p.tags))].sort(byName).map(t => ({ value: t, label: t }))
   const createProject = () => onStub('The project form opens here.')
-  const item = p => ({
-    p, runs: p.testRuns + (runsAdded[p.id] ?? 0), starred: starred.has(p.id), onStar,
-    onOpen: onOpenProject, onCreateRun, onStub,
-  })
+  const item = p => ({ p, runs: p.testRuns + (runsAdded[p.id] ?? 0), starred: starred.has(p.id), onStar, onCreateRun, onStub })
 
   return (
     <div className="column">
@@ -333,9 +339,9 @@ export function YourProjects({ state, view, onView, starred, onStar, visits, run
           <div className="toolbar">
             <LTInputBox value={query} onChange={setQuery} placeholder="Search projects" ariaLabel="Search projects"
               className="toolbar__search" />
-            <LTSelectPanel title="Created by" buttonLabel="Created by" searchPlaceholder="Filter people"
+            <LTSelectPanel title="Created by" buttonLabel="Created by" searchPlaceholder="Filter people" showCountOnCta
               options={creators} defaultValues={createdBy} onApply={setCreatedBy} />
-            <LTSelectPanel title="Tags" buttonLabel="Tags" searchPlaceholder="Filter tags"
+            <LTSelectPanel title="Tags" buttonLabel="Tags" searchPlaceholder="Filter tags" showCountOnCta
               options={allTags} defaultValues={tags} onApply={setTags} />
             <ViewToggle view={view} onView={onView} />
             <LTButton variant="primary" size="medium" label="Create Project" onClick={createProject} />
@@ -345,12 +351,11 @@ export function YourProjects({ state, view, onView, starred, onStar, visits, run
               {view === 'list'
                 ? <ul className="plist">{list.map(p => <ProjectRow key={p.id} {...item(p)} />)}</ul>
                 : <ul className="pgrid">{list.map(p => <ProjectCard key={p.id} {...item(p)} />)}</ul>}
-              {/* v2 item 7. An in-page reveal is a button (guidelines/README.md
-                  §5; the brief says link, spec C16). Title Case, a CTA. */}
-              {canToggle && (
-                <LTButton variant="invisible" size="medium" className="showall" aria-expanded={showAll}
-                  label={showAll ? 'Show Less' : 'Show All'} onClick={toggleAll} />
-              )}
+              {/* v3 item 7: a link to the whole list (spec C16). A standalone
+                  action link is a CTA, so Title Case (ux-text-guidelines.md §2). */}
+              {canShowAll && <p className="showall"><LTLink href="#/projects/all" label="Show All" /></p>}
+              {paged && <LTPagination currentPage={cur} pageCount={pageCount}
+                hrefFor={n => (n === 1 ? '#/projects/all' : `#/projects/all/page/${n}`)} />}
             </div>
           ) : (
             <div className="panel">
@@ -376,15 +381,15 @@ function ArchivedBy({ p, lead = false }) {
   )
 }
 
-function ArchivedRow({ p, onOpen }) {
+function ArchivedRow({ p }) {
   return (
     <li className="prow prow--archived clickrow">
       <LTTestStatusLabel status="archived" showStatusText={false} className="prow__status" />
       <div className="prow__main">
         <div className="prow__head">
-          <h3 className="prow__title"><LTLink label={p.name} className="clickrow__link" onClick={stop(() => onOpen(p))} /></h3>
+          <h3 className="prow__title"><LTLink label={p.name} href={projectHref(p)} className="clickrow__link" /></h3>
           <LTTag text="Read-only" variant="secondary" />
-          <ProjectTags tags={p.tags} />
+          <ProjectTags tags={p.tags} name={p.name} />
         </div>
         <MetaLine>
           <TestCaseCount p={p} lead />
@@ -397,15 +402,15 @@ function ArchivedRow({ p, onOpen }) {
   )
 }
 
-function ArchivedCard({ p, onOpen }) {
+function ArchivedCard({ p }) {
   return (
     <li className="pcard pcard--archived clickrow">
       <div className="pcard__head">
         <LTTestStatusLabel status="archived" showStatusText={false} className="pcard__status" />
-        <h3 className="pcard__title"><LTLink label={p.name} className="clickrow__link" onClick={stop(() => onOpen(p))} /></h3>
+        <h3 className="pcard__title"><LTLink label={p.name} href={projectHref(p)} className="clickrow__link" /></h3>
         <LTTag text="Read-only" variant="secondary" />
       </div>
-      <ProjectTags tags={p.tags} />
+      <ProjectTags tags={p.tags} name={p.name} />
       <MetaLine>
         <TestCaseCount p={p} withShare={false} lead />
         <TestRunCount n={p.testRuns} />
@@ -439,7 +444,6 @@ export function Archived({ state, view, onView, onStub }) {
     const t = setTimeout(() => announce(text), 500)
     return () => clearTimeout(t)
   }, [q])
-  const open = p => onStub(`${p.name} opens here, read-only.`)
   return (
     <div className="column">
       <header className="view-head">
@@ -463,9 +467,9 @@ export function Archived({ state, view, onView, onStub }) {
           </div>
           {list.length > 0 ? (
             view === 'list' ? (
-              <ul className="plist">{list.map(p => <ArchivedRow key={p.id} p={p} onOpen={open} />)}</ul>
+              <ul className="plist">{list.map(p => <ArchivedRow key={p.id} p={p} />)}</ul>
             ) : (
-              <ul className="pgrid">{list.map(p => <ArchivedCard key={p.id} p={p} onOpen={open} />)}</ul>
+              <ul className="pgrid">{list.map(p => <ArchivedCard key={p.id} p={p} />)}</ul>
             )
           ) : (
             <div className="panel">
