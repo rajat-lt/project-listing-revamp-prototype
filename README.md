@@ -1,10 +1,10 @@
 # Project listing revamp · prototype
 
-A working prototype of Test Manager's project listing, revamped from Rajat's 12-point brief of 21 Oct 2026, then reworked the same day by his answers and 7 more changes (v2), and by 11 more (v3): three tabs attached to the platform top bar (Your Projects, For You, Archived) that each user can reorder, the test case listing inside each project, and a project switcher in the top bar. Built from the `design-context` repo: its tokens, component names and props, guidelines, page patterns, text guide and mock data.
+A working prototype of Test Manager's project listing, revamped from Rajat's 12-point brief of 21 Oct 2026, then reworked the same day by his answers and 7 more changes (v2), by 11 more (v3), and on 22 Oct 2026, after his review with the PM, by 8 more (v4): three tabs attached to the platform top bar (Your Projects, For You, Archived) that each user can reorder, the test case listing inside each project, a project switcher in the top bar, and the product's own toolbar on Your Projects. Built from the `design-context` repo: its tokens, component names and props, guidelines, page patterns, text guide and mock data.
 
 **Live:** https://rajat-lt.github.io/project-listing-revamp-prototype/
 
-**Spec:** [`project-listing-revamp.md`](project-listing-revamp.md), in the `design-context/patterns/` house format, as an amendment proposal for `patterns/project-listing.md`. It maps each brief point to components (§1, §1b for v2, §1c for v3), and records every conflict between the brief, the screenshots and the guidelines (§6, C1 to C28), the design decisions (§7), the copy (§8, and §8b for the drawer's changes from the product), the gaps found in design-context (§9), and the open questions (§10).
+**Spec:** [`project-listing-revamp.md`](project-listing-revamp.md), in the `design-context/patterns/` house format, as an amendment proposal for `patterns/project-listing.md`. It maps each brief point to components (§1, §1b for v2, §1c for v3, §1d for v4), and records every conflict between the brief, the screenshots and the guidelines (§6, C1 to C33), the design decisions (§7), the copy (§8, and §8b for the copy changes the product's Create Test Run drawer needs), the gaps found in design-context (§9), and the open questions (§10).
 
 ## Where to see each brief point
 
@@ -15,15 +15,15 @@ A working prototype of Test Manager's project listing, revamped from Rajat's 12-
 | 3.1 | Test instances assigned to you | For You, **Test Instances**: status icon, title, `#TC-` ID, version, test run, configuration (or *Needs a configuration*), when it was assigned and by whom. Hover a cut title for the whole of it |
 | 3.2 | Your next milestone | For You, **Milestones**: yours (you own it or created it), soonest first. Each project row also shows *Your next milestone* |
 | 3.3 | Changes since your last visit | Removed in v2, for the PM to decide |
-| 4 | Facts per project | Your Projects: name, tags, the test case count with its automated share, test runs, your next milestone, *Updated {when}*, *Created by {name}* |
+| 4 | Facts per project | Your Projects: name, tags, the test case and test run counts (icons, no words), *Created by {name}*, *Updated {when}*, and your next milestone. The automated share left in v4 |
 | 5 | Recently used on top | Your Projects opens on your starred and recently used projects |
 | 6 | Star a project | The star at the end of each row, or in each card's corner. Starred projects lead the list the next time the tab opens; a row never jumps away while you star it |
 | 7 | List or grid, remembered | The two icons beside **Create Project**. Reload the page: your choice stays |
-| 8 | Unassigned and unconfigured test instances | *Test instances: 12 unassigned · 4 need a configuration*. Each count is a link |
-| 9 | Create a test run | **Create Test Run** on every project opens the product's drawer |
+| 8 | Unassigned and unconfigured test instances | *Test instances: 12 unassigned*, a link. The count that needs a configuration left in v4 |
+| 9 | Create a test run | Removed in v4 (item 1), with its drawer |
 | 10 | Inactive since | Blog website: *Inactive since Jul 14, 2026.* (more than 90 days idle) |
 | 11 | Ongoing actions | Hover *3 ongoing actions* on Web app for a moment, or press it. Close it with ×, Esc or a click outside |
-| 12 | Archived, read-only | The Archived tab: TV app and Watch app, with no star, no Create Test Run and nothing that changes them. Open one: its test cases, read-only |
+| 12 | Archived, read-only | The Archived tab: TV app and Watch app, with no star and nothing that changes them. Open one: its test cases, read-only |
 
 **v2, 21 Oct 2026**
 
@@ -46,14 +46,26 @@ A working prototype of Test Manager's project listing, revamped from Rajat's 12-
 | v3 3 | GitHub's switcher as inspiration | What was taken and what was not: spec §3.7 |
 | v3 4 | Rest, hover and pressed states | Hover the project's name, then the caret; press each; open the panel |
 | v3 5 | Ctrl or Cmd + click | On a project in the panel: it opens in a new tab and the panel stays open. A plain click switches here |
-| v3 6 | The product's Create Test Run drawer | **Create Test Run** on any project: name, description, tags and type, as the product has them. Leave the name empty to see the error; the button stays active (spec C20) |
+| v3 6 | The product's Create Test Run drawer | Removed in v4 (item 1), with its button. Its copy changes stay in spec §8b |
 | v3 7 | Show All as a link | Under the list on Your Projects: it opens the whole list at [`#/projects/all`](https://rajat-lt.github.io/project-listing-revamp-prototype/#/projects/all) and is gone; Back returns. The whole list paginates at 20, so 7 projects fit one page |
 | v3 8 | The product's icons, without the words | The two counts on every project: a file with a tick and a cross, and a route |
 | v3 9 | *+1* opens the label group | Desktop website: *+1* after its three tags opens all four |
 | v3 10 | Tabs in your own order | Drag a tab sideways, or right-click it (Shift + F10 from the keyboard) for **Move left**, **Move right** and **Reset tab order**. Reload: your order stays |
 | v3 11 | Your Projects first | The default order. The page still opens on For You (spec question 17) |
 
-Also: the **Created by** and **Tags** filters (pick several, then close the panel to apply; **Reset** clears) and the search, which look through every project.
+**v4, 22 Oct 2026, after Rajat's review with the PM**
+
+| # | Change | Try it |
+|---|---|---|
+| v4 1 | Create Test Run removed | Gone from every row and card on [Your Projects](https://rajat-lt.github.io/project-listing-revamp-prototype/#/projects/all), list and grid |
+| v4 2 | A middle dot between the next milestone, the test instance count and the ongoing actions | Web app's third line: *Your next milestone: UAT Round 2, due Oct 23, 2026 · Test instances: 12 unassigned · 3 ongoing actions* |
+| v4 3 | The count that needs a configuration removed | Web app shows *Test instances: 12 unassigned* only; Mobile app, with none unassigned, shows no test instance part |
+| v4 4 | The automated share removed | *1.24k* beside the test case icon, and no bar on the grid cards, Archived included |
+| v4 5 | A different ongoing action | Web app's *3 ongoing actions*: the third is now *Copy test cases to Payments*, queued |
+| v4 6 | Rows and cards re-laid | Name and tags, then the facts, then what needs you, 8px apart; the star alone at the side. Switch to the grid to compare |
+| v4 7 | The product's toolbar | **Owners**, **Tags** and **Products** beside the search field, then **Create Project** as a split button: its caret opens **Import data**. Products, Create Project and Import data answer with a toast (spec C31, C32) |
+
+Also: the **Owners** and **Tags** filters (pick several, then close the panel to apply; **Reset** clears) and the search, which look through every project.
 
 ## Review states
 
@@ -72,22 +84,21 @@ Each `?state=` applies to all three tabs and to the project pages; switch tabs t
 ## Remembered, and what resets
 
 - **Per user, in this browser:** the list or grid choice, your stars and your tab order, under the signed-in user's ID (Ritika Sharma). The product would keep them on the account (spec §4.7). Clear the site's data to start fresh, or use **Reset tab order** in a tab's menu.
-- **Until a reload:** visits made by opening a project, the search and filters, selected test cases, and test runs created in the drawer.
+- **Until a reload:** visits made by opening a project, the search and filters, and selected test cases.
 
 ## Simulated in this prototype
 
-- **Every destination not built here** (a test case, Add Test Case, a project's Test Runs and Milestones, a test instance, a milestone, the filtered test instance list, the Actions tab, Create Project, the top bar's Credits, Recent Tests, Announcements and Upgrade Now) shows a toast naming where it leads. A project's name opens its test case listing, which is built.
-- **Create Test Run** creates nothing outside the page: the run joins the project's count until a reload.
+- **Every destination not built here** (a test case, Add Test Case, a project's Test Runs and Milestones, a test instance, a milestone, the filtered test instance list, the Actions tab, Create Project and its Import data, the Products filter, the top bar's Credits, Recent Tests, Announcements and Upgrade Now) shows a toast naming where it leads. A project's name opens its test case listing, which is built.
 - **The notifications bell** opens the [notification center prototype](https://rajat-lt.github.io/notification-center-prototype/) in a new tab.
 - **Time stands still** at Oct 21, 2026, 10:30 AM, so every relative date reads the same on every visit.
 - **The test cases are dummy data** (v3 item 1): as many as each project's count, with titles from `mock-data.md`'s lists, so titles repeat. The ones assigned to you in For You come first, under their own IDs.
 
 ## How it is built from design-context
 
-- **Tokens:** `scripts/tokens.mjs` reads `data/tokens.json` from design-context's `main` branch and writes `src/tokens.css`. Every variable names its token path, and the script stops if a token is missing. The current file holds 104 tokens from `main` at `e014a73`.
+- **Tokens:** `scripts/tokens.mjs` reads `data/tokens.json` from design-context's `main` branch and writes `src/tokens.css`. Every variable names its token path, and the script stops if a token is missing. The current file holds 106 tokens from `main` at `618b4b8`.
 - **Components:** each one is a look-alike of the private `lt-components` library under its real name, styled from the tokens and used as `guidelines/` says. The spec uses only props documented in `COMPONENTS.md`; the props the look-alikes take beyond it are listed in the spec's §9, from an audit against `data/components.json`. Shapes the manifest leaves undocumented (`navs`, `items`, `listItems`, `options`) are marked TBD in the spec.
 - **Layout, copy and data:** `patterns/project-listing.md` is the base, with the shell from `patterns/topbar.md` and `patterns/platform-sidebar.md`, the attached tabs, the two panes and the test case listing from `patterns/test-entity-listing.md`, and reordering from `patterns/module-details.md`. `ux-text-guidelines.md` governs every string. `mock-data.md` supplies the projects, cast, test case and test run names, configurations, formats and IDs, and everything it lacks is listed in the spec's §9. The ongoing actions and the folder names follow Rajat's `project-actions-listing.md`.
-- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 42 used: Accessibility, ArrowLeft, ArrowRight, Bell, Bot, ChartColumn, Check, ChevronDown, ChevronRight, CircleAlert, CircleCheck, CircleHelp, CircleSlash, ClipboardList, Clock, Coins, Ellipsis, Flag, Globe, House, Info, KeyRound, LayoutGrid, List, ListTodo, LoaderCircle, Megaphone, Minus, Monitor, RotateCcw, Route, ScanEye, Search, Settings, Smartphone, SquareTerminal, Star, TestTubes, TriangleAlert, Workflow, X, Zap. The status icons are drawn to `mock-data.md`'s description of the Status component. The test run icon is `Route`, flipped vertically, as the product shows it; the test case icon, a file with a tick and a cross, has no lucide match and is drawn on lucide's grid (`TestCaseIcon` in `src/lt.jsx`, spec C26). The platform sidebar's icons are placeholders chosen by intent, since design-context names none.
+- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 44 used: Accessibility, ArrowLeft, ArrowRight, Bell, Bot, ChartColumn, Check, ChevronDown, ChevronRight, CircleAlert, CircleCheck, CircleHelp, CircleSlash, ClipboardList, Clock, Coins, Ellipsis, Flag, FolderInput, Globe, House, Info, KeyRound, LayoutGrid, List, ListTodo, LoaderCircle, Megaphone, Minus, Monitor, Notebook, RotateCcw, Route, ScanEye, Search, Settings, Smartphone, SquareTerminal, Star, TestTubes, TriangleAlert, Workflow, X, Zap. The status icons are drawn to `mock-data.md`'s description of the Status component. The test run icon is `Route`, flipped vertically, as the product shows it; the test case icon, a file with a tick and a cross, has no lucide match and is drawn on lucide's grid (`TestCaseIcon` in `src/lt.jsx`, spec C26). `Notebook` on Create Project and `FolderInput` on Import data match the product's toolbar. The platform sidebar's icons are placeholders chosen by intent, since design-context names none.
 
 ## Run it
 
@@ -110,13 +121,12 @@ Build for GitHub Pages with `npm run build`; the site is served from the `gh-pag
 |---|---|
 | `project-listing-revamp.md` | The spec |
 | `scripts/tokens.mjs`, `src/tokens.css` | Token generator and its output |
-| `src/lt.jsx`, `src/overlays.jsx` | The LT component look-alikes, including `LTSelectPanel`, `LTPopover`, `LTTabNav`, `LTNavList`, `LTDrawer`, `LTActionMenu`, `LTAnchoredOverlay`, `LTPagination`, `LTCheckbox`, `LTRadioGroup` and the form fields; and the test case and test run icons |
+| `src/lt.jsx`, `src/overlays.jsx` | The LT component look-alikes, including `LTSelectPanel`, `LTPopover`, `LTTabNav`, `LTNavList`, `LTButtonGroup`, `LTDrawer`, `LTActionMenu`, `LTAnchoredOverlay`, `LTPagination`, `LTCheckbox`, `LTRadioGroup` and the form fields; and the test case and test run icons |
 | `src/shell.jsx` | Platform sidebar and top bar, with the breadcrumb inside a project |
 | `src/switcher.jsx` | The project crumb and its switcher (v3 items 2 to 5) |
 | `src/tabbar.jsx` | The page's tabs in each user's order: drag and the tab's menu (v3 items 10 and 11) |
-| `src/App.jsx` | The routes, the per-user settings, visits, the switcher's groups, the drawer and the demo states |
+| `src/App.jsx` | The routes, the per-user settings, visits, the switcher's groups and the demo states |
 | `src/foryou.jsx` | For You (brief 3; v2 item 2) |
-| `src/projects.jsx` | Your Projects and Archived (brief 4 to 12; v2 items 4 to 7; v3 items 7 to 9) |
+| `src/projects.jsx` | Your Projects and Archived (brief 4 to 12; v2 items 4 to 7; v3 items 7 to 9; v4 items 1 to 7) |
 | `src/projectpage.jsx` | The test case listing inside a project (v3 item 1) |
-| `src/createrun.jsx` | The Create Test Run drawer (answer 9; v3 item 6) |
 | `src/data.js`, `src/format.js` | Mock data, including the dummy test cases, and the `mock-data.md` formats |

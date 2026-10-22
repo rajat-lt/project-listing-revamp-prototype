@@ -1,13 +1,14 @@
 // Your Projects (brief 4 to 11) and Archived (brief 12), with the changes of
-// 21 Oct 2026 (v2 items 4 to 7, v3 items 7 to 9). Spec §3.4, §3.5 and §4.
+// 21 Oct 2026 (v2 items 4 to 7, v3 items 7 to 9) and of 22 Oct 2026, after
+// Rajat's review with the PM (v4 items 1 to 7). Spec §3.4, §3.5 and §4.
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Star, Flag, ListTodo, List, LayoutGrid } from 'lucide-react'
+import { Star, Flag, ListTodo, List, LayoutGrid, Notebook, FolderInput, ChevronDown } from 'lucide-react'
 import {
-  cx, announce, LTLink, LTTag, LTLabelGroup, LTMetaData, MetaLine, LTButton, LTIconButton, LTInlineMessage, LTProgressBar,
-  LTTestStatusLabel, StatusGlyph, LTInputBox, LTBlankSlate, LTLoader, LTFlash, LTAvatar, LTPagination, PersonHint, TimeHint,
-  TestCaseIcon, TestRunIcon,
+  cx, announce, LTLink, LTTag, LTLabelGroup, LTMetaData, MetaLine, LTButton, LTButtonGroup, LTIconButton,
+  LTInlineMessage, LTProgressBar, LTTestStatusLabel, StatusGlyph, LTInputBox, LTBlankSlate, LTLoader, LTFlash,
+  LTAvatar, LTPagination, PersonHint, TimeHint, TestCaseIcon, TestRunIcon,
 } from './lt.jsx'
-import { LTSegmentedControl, LTSelectPanel, LTPopover, LTAnchoredOverlay } from './overlays.jsx'
+import { LTSegmentedControl, LTSelectPanel, LTPopover, LTAnchoredOverlay, LTActionMenu } from './overlays.jsx'
 import { PROJECTS, ARCHIVED, NOW, isInactive, nextMilestoneOf } from './data.js'
 import { fmtDate, fmtCount, fmtDuration, initials } from './format.js'
 
@@ -48,13 +49,11 @@ function ProjectTags({ tags, name }) {
   )
 }
 
-/* Brief 4: "total TC count (automated TC percentage)" and the test run count.
-   v3 item 8: the product's own two icons stand for the words, which leave the
-   line; screen readers still hear them (spec C18). */
-const testCasesText = p => (p.testCases ? `${fmtCount(p.testCases)} (${p.automatedPct}% automated)` : '0')
-const TestCaseCount = ({ p, withShare = true, lead = false }) => (
-  <LTMetaData leadingIcon={TestCaseIcon} showLeadingDot={!lead} label="Test cases"
-    value={withShare ? testCasesText(p) : fmtCount(p.testCases)} />
+/* Brief 4's test case and test run counts. v3 item 8: the product's own two
+   icons stand for the words, which only screen readers hear (spec C18). v4
+   item 4: the automated share has left both views. */
+const TestCaseCount = ({ p, lead = false }) => (
+  <LTMetaData leadingIcon={TestCaseIcon} showLeadingDot={!lead} label="Test cases" value={fmtCount(p.testCases)} />
 )
 const TestRunCount = ({ n }) => <LTMetaData leadingIcon={TestRunIcon} label="Test runs" value={fmtCount(n)} />
 
@@ -75,59 +74,52 @@ function StarToggle({ p, starred, onStar }) {
   )
 }
 
-/* Brief 8 and the milestone of brief 4: what needs you in this project. Your
-   next milestone is the soonest one you own or created (Rajat, 21 Oct 2026).
-   Each count links to the project's test instance list, filtered; a zero
-   count is omitted, and with both at zero the line is gone. */
-function NeedsYou({ p, onStub, stacked = false }) {
+/* What needs you in this project: one line of meta, like the facts above it,
+   with a middle dot between its three parts (v4 item 2). Your next milestone
+   is the soonest one you own or created (Rajat, 21 Oct 2026). The unassigned
+   test instances link to the project's list, filtered (brief 8); v4 item 3
+   took out the ones that need a configuration, so a project with none
+   unassigned shows no test instance part. The milestone's date follows a
+   comma, so every middle dot on the line separates parts (spec C33). A part
+   with nothing to say is left out; with all three empty, so is the line. */
+function NeedsYou({ p, onStub }) {
   const milestone = nextMilestoneOf(p.id)
-  const ti = [
-    p.unassigned > 0 && { key: 'u', label: `${fmtCount(p.unassigned)} unassigned`,
-      toast: `The ${plural(p.unassigned, 'unassigned test instance', 'unassigned test instances')} in ${p.name} open here.` },
-    p.needConfig > 0 && { key: 'c', label: `${fmtCount(p.needConfig)} ${p.needConfig === 1 ? 'needs' : 'need'} a configuration`,
-      toast: `The ${plural(p.needConfig, 'test instance', 'test instances')} in ${p.name} that need a configuration open here.` },
+  const parts = [
+    milestone && (dot => (
+      <LTMetaData key="milestone" leadingIcon={Flag} showLeadingDot={dot}>
+        Your next milestone: {milestone.name}, due {fmtDate(milestone.due)}
+      </LTMetaData>
+    )),
+    p.unassigned > 0 && (dot => (
+      <LTMetaData key="instances" leadingIcon={ListTodo} showLeadingDot={dot}>
+        Test instances:{' '}
+        <LTLink muted label={`${fmtCount(p.unassigned)} unassigned`} onClick={stop(() => onStub(
+          `The ${plural(p.unassigned, 'unassigned test instance', 'unassigned test instances')} in ${p.name} open here.`))} />
+      </LTMetaData>
+    )),
+    p.actions.length > 0 && (dot => <OngoingActions key="actions" p={p} onStub={onStub} dot={dot} />),
   ].filter(Boolean)
-  if (!milestone && !ti.length && !p.actions.length) return null
-  return (
-    <div className={cx('needs', stacked && 'needs--stacked')}>
-      {milestone && (
-        <p className="need">
-          <Flag size={16} aria-hidden="true" className="need__icon" />
-          <span>Your next milestone: {milestone.name} · {fmtDate(milestone.due)}</span>
-        </p>
-      )}
-      {ti.length > 0 && (
-        <p className="need">
-          <ListTodo size={16} aria-hidden="true" className="need__icon" />
-          <span>
-            Test instances:{' '}
-            {ti.map((t, i) => (
-              <React.Fragment key={t.key}>
-                {i > 0 && <span className="meta-dot" aria-hidden="true">·</span>}
-                <LTLink muted label={t.label} onClick={stop(() => onStub(t.toast))} />
-              </React.Fragment>
-            ))}
-          </span>
-        </p>
-      )}
-      {p.actions.length > 0 && <OngoingActions p={p} onStub={onStub} />}
-    </div>
-  )
+  if (!parts.length) return null
+  return <MetaLine className="needs">{parts.map((part, i) => part(i > 0))}</MetaLine>
 }
 
-/* Brief 11. The count of running and queued actions; hovering it for 250ms,
-   or pressing it, opens the list in an LTPopover (spec C3, C5, C12). */
+/* Brief 11. The count of running and queued actions, the line's third part;
+   hovering it for 250ms, or pressing it, opens the list in an LTPopover
+   (spec C3, C5, C12). */
 const RunningIcon = () => <StatusGlyph status="running" size={16} />
 const QueuedIcon = () => <StatusGlyph status="queued" size={16} />
-function OngoingActions({ p, onStub }) {
+function OngoingActions({ p, onStub, dot }) {
   const n = p.actions.length
   const label = `${n} ongoing ${n === 1 ? 'action' : 'actions'}`
   return (
-    <LTPopover direction="bottom-left" canChangeDirection containsInteractiveChildElement heading={label}
-      popOverbodyJSX={<ActionList p={p} onStub={onStub} />}>
-      <LTButton variant="invisible" size="small" className="need__btn" label={label}
-        leadingIcon={p.actions.some(a => a.status === 'running') ? RunningIcon : QueuedIcon} />
-    </LTPopover>
+    <span className={cx('meta-item', !dot && 'meta-item--lead')}>
+      {dot && <span className="meta-dot" aria-hidden="true">·</span>}
+      <LTPopover direction="bottom-left" canChangeDirection containsInteractiveChildElement heading={label}
+        popOverbodyJSX={<ActionList p={p} onStub={onStub} />}>
+        <LTButton variant="invisible" size="small" className="need__btn" label={label}
+          leadingIcon={p.actions.some(a => a.status === 'running') ? RunningIcon : QueuedIcon} />
+      </LTPopover>
+    </span>
   )
 }
 
@@ -177,14 +169,19 @@ function Inactive({ p }) {
 }
 
 /* ---------- the list row and the grid card ----------
+   v4 item 6: three lines in both, read top down: what the project is (its
+   name and tags), its facts (counts, creator, last update), then what needs
+   you (milestone, test instances, actions), and an inactive project's note
+   last. The star is the one control left at the side, in line with the name
+   (v4 item 1 took Create Test Run out of both views).
    v2 item 5: hovering anywhere on a row or card underlines its title, and a
    click anywhere on it opens the project, through the title link. The
-   controls inside it (tags, counts, the actions popover, Create Test Run,
-   the star, and the name and date hints) sit above that and work as before. */
+   controls inside it (tags, the test instance link, the actions popover, the
+   star, and the name and date hints) sit above that and work as before. */
 
 const projectHref = p => `#/project/${p.id}`
 
-function ProjectRow({ p, runs, starred, onStar, onCreateRun, onStub }) {
+function ProjectRow({ p, starred, onStar, onStub }) {
   return (
     <li className="prow clickrow" data-pid={p.id}>
       <div className="prow__main">
@@ -194,24 +191,22 @@ function ProjectRow({ p, runs, starred, onStar, onCreateRun, onStub }) {
         </div>
         <MetaLine>
           <TestCaseCount p={p} lead />
-          <TestRunCount n={runs} />
+          <TestRunCount n={p.testRuns} />
           <CreatedBy name={p.createdBy} />
           <Updated date={p.updatedAt} />
         </MetaLine>
         <NeedsYou p={p} onStub={onStub} />
         <Inactive p={p} />
       </div>
-      <div className="prow__actions">
-        <LTButton variant="outline" size="small" label="Create Test Run" onClick={() => onCreateRun(p)} />
-        <StarToggle p={p} starred={starred} onStar={onStar} />
-      </div>
+      <StarToggle p={p} starred={starred} onStar={onStar} />
     </li>
   )
 }
 
-/* The grid card carries the row's facts, rearranged (spec §3.4). No card
-   component exists among the 69, so it is composed, as SmartUI's are. */
-function ProjectCard({ p, runs, starred, onStar, onCreateRun, onStub }) {
+/* The grid card carries the row's facts in the same order, the creator and
+   the last update moved to its foot (spec §3.4). No card component exists
+   among the 69, so it is composed, as SmartUI's are. */
+function ProjectCard({ p, starred, onStar, onStub }) {
   return (
     <li className="pcard clickrow" data-pid={p.id}>
       <div className="pcard__head">
@@ -220,24 +215,16 @@ function ProjectCard({ p, runs, starred, onStar, onCreateRun, onStub }) {
       </div>
       <ProjectTags tags={p.tags} name={p.name} />
       <MetaLine>
-        <TestCaseCount p={p} withShare={false} lead />
-        <TestRunCount n={runs} />
+        <TestCaseCount p={p} lead />
+        <TestRunCount n={p.testRuns} />
       </MetaLine>
-      {p.testCases > 0 && (
-        <div className="pcard__auto">
-          <LTProgressBar size="small" className="pcard__bar"
-            segments={[{ id: 'automated', progress: p.automatedPct, style: { backgroundColor: 'var(--accent-emphasis)' } }]} />
-          <span>{p.automatedPct}% automated</span>
-        </div>
-      )}
-      <NeedsYou p={p} onStub={onStub} stacked />
+      <NeedsYou p={p} onStub={onStub} />
       <Inactive p={p} />
       <div className="pcard__foot">
         <MetaLine>
           <CreatedBy name={p.createdBy} lead />
           <Updated date={p.updatedAt} />
         </MetaLine>
-        <LTButton variant="outline" size="small" label="Create Test Run" onClick={() => onCreateRun(p)} />
       </div>
     </li>
   )
@@ -249,12 +236,12 @@ const RECENT_MAX = 4
 const byName = (a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })
 const byUpdated = (a, b) => b.updatedAt - a.updatedAt
 
-export function YourProjects({ state, view, onView, starred, onStar, visits, runsAdded, showAll, page, onCreateRun, onStub }) {
+export function YourProjects({ state, view, onView, starred, onStar, visits, showAll, page, onStub }) {
   const projects = state === 'empty' ? [] : PROJECTS
   const [query, setQuery] = useState('')
-  const [createdBy, setCreatedBy] = useState([])
+  const [owners, setOwners] = useState([])
   const [tags, setTags] = useState([])
-  const filtering = Boolean(query.trim() || createdBy.length || tags.length)
+  const filtering = Boolean(query.trim() || owners.length || tags.length)
   const listRef = useRef(null)
 
   /* v2 item 7, progressive disclosure: the tab opens on your projects, the
@@ -277,12 +264,13 @@ export function YourProjects({ state, view, onView, starred, onStar, visits, run
   }, [projects])
 
   // A search or a filter looks through every project, in the same order.
+  // A project's owner is its creator, for now (answer 3, spec C30).
   const q = query.trim().toLowerCase()
   const everything = [...order.yours, ...order.rest]
   const matched = filtering
     ? everything
       .filter(p => !q || p.name.toLowerCase().includes(q))
-      .filter(p => !createdBy.length || createdBy.includes(p.createdBy))
+      .filter(p => !owners.length || owners.includes(p.createdBy))
       .filter(p => !tags.length || p.tags.some(t => tags.includes(t)))
     : showAll || !order.yours.length ? everything : order.yours
   const canShowAll = !filtering && !showAll && order.yours.length > 0 && order.rest.length > 0
@@ -296,7 +284,7 @@ export function YourProjects({ state, view, onView, starred, onStar, visits, run
 
   // The result count, for screen readers, once typing pauses.
   const first = useRef(true)
-  const filterKey = `${q}|${createdBy.join()}|${tags.join()}`
+  const filterKey = `${q}|${owners.join()}|${tags.join()}`
   useEffect(() => {
     if (first.current) { first.current = false; return }
     const text = filtering ? plural(list.length, 'matching project', 'matching projects') : plural(list.length, 'project', 'projects')
@@ -314,11 +302,11 @@ export function YourProjects({ state, view, onView, starred, onStar, visits, run
     announce(plural(everything.length, 'project', 'projects'))
   }, [showAll])
 
-  const creators = [...new Set(projects.map(p => p.createdBy))].sort(byName)
+  const people = [...new Set(projects.map(p => p.createdBy))].sort(byName)
     .map(n => ({ value: n, label: n, leadingVisual: <LTAvatar initials={initials(n)} name={n} size={20} decorative /> }))
   const allTags = [...new Set(projects.flatMap(p => p.tags))].sort(byName).map(t => ({ value: t, label: t }))
   const createProject = () => onStub('The project form opens here.')
-  const item = p => ({ p, runs: p.testRuns + (runsAdded[p.id] ?? 0), starred: starred.has(p.id), onStar, onCreateRun, onStub })
+  const item = p => ({ p, starred: starred.has(p.id), onStar, onStub })
 
   return (
     <div className="column">
@@ -336,15 +324,33 @@ export function YourProjects({ state, view, onView, starred, onStar, visits, run
       )}
       {state === 'ready' && (
         <section aria-label="Projects">
+          {/* v4 item 7: the product's toolbar (Rajat's screenshot and
+              patterns/project-listing.md): Owners, Tags and Products, then
+              Create Project as a split button. The view switch keeps its
+              place before it (brief 7). */}
           <div className="toolbar">
             <LTInputBox value={query} onChange={setQuery} placeholder="Search projects" ariaLabel="Search projects"
               className="toolbar__search" />
-            <LTSelectPanel title="Created by" buttonLabel="Created by" searchPlaceholder="Filter people" showCountOnCta
-              options={creators} defaultValues={createdBy} onApply={setCreatedBy} />
+            <LTSelectPanel title="Owners" buttonLabel="Owners" searchPlaceholder="Filter people" showCountOnCta
+              options={people} defaultValues={owners} onApply={setOwners} />
             <LTSelectPanel title="Tags" buttonLabel="Tags" searchPlaceholder="Filter tags" showCountOnCta
               options={allTags} defaultValues={tags} onApply={setTags} />
+            {/* GAP: design-context has no product values and no product per
+                project (spec C31), so the filter answers with a toast. */}
+            <LTButton variant="outline" size="medium" label="Products" trailingIcon={ChevronDown}
+              onClick={() => onStub('The Products filter opens here.')} />
             <ViewToggle view={view} onView={onView} />
-            <LTButton variant="primary" size="medium" label="Create Project" onClick={createProject} />
+            {/* The split button of guidelines/ltbuttongroup.md: the action,
+                then a caret of the same variant and size, with no tooltip of
+                its own, opening the other ways to create (spec C32). */}
+            <LTButtonGroup>
+              <LTButton variant="primary" size="medium" label="Create Project" leadingIcon={Notebook} onClick={createProject} />
+              <LTActionMenu align="end" width={200} ariaLabel="More ways to create a project"
+                customAnchor={<LTIconButton icon={ChevronDown} variant="primary" size="medium" unsafeDisableTooltip
+                  ariaLabel="More ways to create a project" />}
+                options={[{ value: 'import', label: 'Import data', icon: FolderInput }]}
+                onSelect={() => onStub('The data import opens here.')} />
+            </LTButtonGroup>
           </div>
           {list.length > 0 ? (
             <div ref={listRef}>
@@ -370,9 +376,9 @@ export function YourProjects({ state, view, onView, starred, onStar, visits, run
 
 /* ---------- Archived ---------- */
 
-/* Brief 12: read-only. No star, no Create Test Run, no milestone, no test
-   instance counts and no actions: nothing in an archived project changes.
-   It leads with the archived status icon (mock-data.md, type=Archive). */
+/* Brief 12: read-only. No star, no milestone, no test instance counts and no
+   actions: nothing in an archived project changes. It leads with the
+   archived status icon (mock-data.md, type=Archive). */
 function ArchivedBy({ p, lead = false }) {
   return (
     <LTMetaData showLeadingDot={!lead}>
@@ -412,16 +418,9 @@ function ArchivedCard({ p }) {
       </div>
       <ProjectTags tags={p.tags} name={p.name} />
       <MetaLine>
-        <TestCaseCount p={p} withShare={false} lead />
+        <TestCaseCount p={p} lead />
         <TestRunCount n={p.testRuns} />
       </MetaLine>
-      {p.testCases > 0 && (
-        <div className="pcard__auto">
-          <LTProgressBar size="small" className="pcard__bar"
-            segments={[{ id: 'automated', progress: p.automatedPct, style: { backgroundColor: 'var(--accent-emphasis)' } }]} />
-          <span>{p.automatedPct}% automated</span>
-        </div>
-      )}
       <div className="pcard__foot">
         <MetaLine>
           <CreatedBy name={p.createdBy} lead />

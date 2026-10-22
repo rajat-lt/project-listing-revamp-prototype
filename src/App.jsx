@@ -10,7 +10,6 @@ import { ReorderTabs } from './tabbar.jsx'
 import { ForYou } from './foryou.jsx'
 import { YourProjects, Archived } from './projects.jsx'
 import { ProjectPage } from './projectpage.jsx'
-import { CreateTestRunDrawer } from './createrun.jsx'
 import {
   PROJECTS, ARCHIVED, USER, NOW, FOLDERS, projectById, isArchived, milestonesIn, testCasesOf,
 } from './data.js'
@@ -74,10 +73,6 @@ function Page() {
   // Your visits make a project recently used (brief 5).
   const [visits, setVisits] = useState(() =>
     Object.fromEntries([...PROJECTS, ...ARCHIVED].map(p => [p.id, { at: p.visitedAt ?? null }])))
-  // Test runs created here, by project, until a reload.
-  const [runsAdded, setRunsAdded] = useState({})
-  const [runProject, setRunProject] = useState(null)
-  const drawerRef = useRef(null)
   const contentRef = useRef(null)
 
   useEffect(() => {
@@ -107,15 +102,6 @@ function Page() {
     setStarred(next)
     save('starred', [...next])
     announce(`${p.name} ${on ? 'starred' : 'unstarred'}`)
-  }
-  /* Answer 9: Create Test Run opens its drawer on this page. The new run
-     joins the project's count, and a toast says where it went
-     (ux-text-guidelines.md §3 Toasts: the object, and the past tense of the
-     button's verb). */
-  const onCreateRun = p => { setRunProject(p); drawerRef.current.open() }
-  const onCreated = ({ project: p, name }) => {
-    setRunsAdded(m => ({ ...m, [p.id]: (m[p.id] ?? 0) + 1 }))
-    toast(`Test run "${name}" created in ${p.name}.`, 'success')
   }
 
   /* v3 item 2: the switcher lists every project, archived ones too: recently
@@ -153,8 +139,7 @@ function Page() {
   const projectNavs = project && [
     { id: 'test-cases', label: 'Test Cases', href: `#/project/${project.id}`,
       counter: DEMO === 'ready' ? fmtCount(testCasesOf(project).length) : DEMO === 'empty' ? 0 : null },
-    { id: 'test-runs', label: 'Test Runs', href: '#test-runs',
-      counter: fmtCount(project.testRuns + (runsAdded[project.id] ?? 0)) },
+    { id: 'test-runs', label: 'Test Runs', href: '#test-runs', counter: fmtCount(project.testRuns) },
     { id: 'milestones', label: 'Milestones', href: '#milestones', counter: fmtCount(milestonesIn(project.id).length) },
   ]
 
@@ -187,12 +172,11 @@ function Page() {
           {route.tab === 'for-you' && <ForYou state={DEMO} selected={route.selected} tab={route.sub} onStub={onStub} />}
           {route.tab === 'projects' && (
             <YourProjects state={DEMO} view={view} onView={onView} starred={starred} onStar={onStar} visits={visits}
-              runsAdded={runsAdded} showAll={route.all} page={route.page} onCreateRun={onCreateRun} onStub={onStub} />
+              showAll={route.all} page={route.page} onStub={onStub} />
           )}
           {route.tab === 'archived' && <Archived state={DEMO} view={view} onView={onView} onStub={onStub} />}
         </main>
       </div>
-      <CreateTestRunDrawer ref={drawerRef} project={runProject} onCreate={onCreated} />
     </div>
   )
 }
