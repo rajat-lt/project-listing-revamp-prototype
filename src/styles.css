@@ -144,8 +144,9 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .lt-btn--invisible { background: transparent; border-color: transparent; box-shadow: none; }
 .lt-btn--invisible:hover { background: var(--btn-invisible-hover-bg); }
 .lt-btn--invisible[aria-expanded="true"] { background: var(--btn-invisible-active-bg); }
-.lt-btn--primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); border-color: var(--btn-border); }
+.lt-btn--primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); border-color: var(--btn-primary-border); }
 .lt-btn--primary:hover { background: var(--btn-primary-hover-bg); }
+.lt-btn--primary:active, .lt-btn--primary[aria-expanded="true"] { background: var(--btn-primary-selected-bg); }
 .lt-btn--primary .lt-btn__icon { color: inherit; }
 /* Orange is for upgrade and marketing only (guidelines/ltbutton.md). */
 .lt-btn--orange { background: var(--severe-emphasis); color: var(--fg-on-emphasis); border-color: var(--btn-border); }
@@ -168,6 +169,21 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .lt-iconbtn--outline { background: var(--btn-outline-bg); border-color: var(--btn-outline-border); box-shadow: var(--shadow-btn); }
 .lt-iconbtn--outline:hover { background: var(--btn-hover-bg); color: var(--fg-default); }
 .lt-iconbtn--invisible:hover { background: var(--btn-invisible-hover-bg); color: var(--fg-default); }
+.lt-iconbtn--primary {
+  background: var(--btn-primary-bg); color: var(--btn-primary-text); border-color: var(--btn-primary-border);
+  box-shadow: var(--shadow-btn);
+}
+.lt-iconbtn--primary:hover { background: var(--btn-primary-hover-bg); }
+.lt-iconbtn--primary:active, .lt-iconbtn--primary[aria-expanded="true"] { background: var(--btn-primary-selected-bg); }
+
+/* LTButtonGroup: one control. The inner corners square off, and the borders
+   that meet overlap into one divider; a focused button rises above it. */
+.lt-btngroup { display: inline-flex; flex: none; }
+.lt-btngroup > * { position: relative; }
+.lt-btngroup > * + * { margin-left: -1px; }
+.lt-btngroup > :not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.lt-btngroup > :not(:first-child) { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.lt-btngroup > :focus-visible { z-index: 1; }
 
 .lt-counter {
   display: inline-flex; align-items: center; justify-content: center;
@@ -207,8 +223,9 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .meta-icon { flex: none; color: var(--fg-muted); }
 /* A wrapped meta line never starts with a dot: every item leads with 12px
    (the 8px dot and its 4px gap, or padding on the first item), and the line
-   clips that lead at its left edge. */
-.meta-line { overflow: hidden; font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
+   clips that lead at its left edge. It clips sideways only, so focus rings
+   and a 24px target on the line stay whole above and below it. */
+.meta-line { overflow-x: clip; overflow-y: visible; font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
 .meta-line__items { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-1); margin-left: calc(var(--space-3) * -1); }
 .meta-item--lead { padding-left: var(--space-3); }
 
@@ -402,11 +419,6 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 
 /* Form fields: label above, then the message and the caption below. */
 .form { display: flex; flex-direction: column; gap: var(--space-5); }
-/* In the drawer the legend for the asterisks sits at the foot of the body,
-   as in the product's drawer. */
-.lt-drawer__body:has(.form--drawer) { display: flex; flex-direction: column; }
-.form--drawer { flex: 1; }
-.form__note { margin-top: auto; padding-top: var(--space-4); color: var(--fg-muted); }
 .lt-field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .lt-field__label { font-weight: var(--weight-bold); }
 /* The required mark is red, as in the product's drawer. */
@@ -661,11 +673,14 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 section > .panel { margin-top: var(--space-3); }
 .showall { margin-top: var(--space-3); }
 
+/* v4 item 6: the row reads top down, name and tags, then the facts, then
+   what needs you; the star is the one control at its side, centred on the
+   name's 20px line. */
 .prow { display: flex; align-items: flex-start; gap: var(--space-4); padding: var(--space-4) var(--space-5); }
 .prow__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-2); }
 .prow__head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); min-width: 0; }
 .prow__title, .pcard__title { font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); min-width: 0; overflow-wrap: anywhere; }
-.prow__actions { display: flex; align-items: center; gap: var(--space-1); flex: none; }
+.prow > .star { margin-top: calc(var(--space-1) * -1); }
 
 .tags { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); min-width: 0; }
 /* v3 item 9: "+{n}", a pill like the tags it stands for, but a button: a
@@ -680,15 +695,15 @@ section > .panel { margin-top: var(--space-3); }
 .tags__more:hover { background: var(--btn-invisible-hover-bg); color: var(--fg-default); }
 .tags__more:active, .tags__more[aria-expanded="true"] { background: var(--btn-invisible-active-bg); color: var(--fg-default); }
 
-/* What needs you: milestone, test instances, ongoing actions. */
-.needs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-4); font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
-.needs--stacked { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
-.need { display: inline-flex; align-items: center; gap: var(--space-1); min-width: 0; }
-.need .meta-dot { margin: 0 var(--space-1); width: auto; }
-.need__icon { flex: none; color: var(--fg-muted); }
-/* The actions trigger sits on the text line, its icon in line with the
-   icons beside it. */
-.need__btn.lt-btn--small { height: 24px; margin-left: calc(var(--space-2) * -1); gap: var(--space-1); color: var(--fg-default); }
+/* What needs you: a meta line of its own, its parts split by middle dots
+   (v4 item 2). The actions trigger sits on the text line, its icon where the
+   other parts' icons sit, its label in the default colour. Its 24px target
+   (README §9) overhangs the 18px line by 3px each way rather than growing
+   it, so every line in a row keeps the same 8px rhythm. */
+.need__btn.lt-btn--small {
+  height: 24px; margin: calc((var(--lh-12) - 24px) / 2) 0 calc((var(--lh-12) - 24px) / 2) calc(var(--space-2) * -1);
+  gap: var(--space-1); color: var(--fg-default);
+}
 .inactive { margin-top: var(--space-1); }
 
 /* Grid: as many 360px-or-wider cards as fit, 3 at 1512 and 2 at 1280. */
@@ -701,8 +716,6 @@ section > .panel { margin-top: var(--space-3); }
 .pcard__head .pcard__title { flex: 1; padding-top: 4px; }
 .pcard--archived .pcard__head { align-items: center; }
 .pcard--archived .pcard__head .pcard__title { flex: 0 1 auto; padding-top: 0; }
-.pcard__auto { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
-.pcard__bar { flex: 0 0 120px; }
 .pcard__foot {
   display: flex; align-items: center; gap: var(--space-3); margin-top: auto; padding-top: var(--space-3);
   border-top: 1px solid var(--border-muted);

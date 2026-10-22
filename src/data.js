@@ -57,7 +57,9 @@ const ACTIONS = {
       pct: 25, left: '4m 10s', elapsed: 4 * 60 + 12, by: 'Ritika Sharma' },
     { id: 'a2', status: 'running', title: 'Regression Suite - Release 8.4', done: 34, total: 50, unit: 'test instances',
       pct: 68, left: '12m', elapsed: 26 * 60 + 40, by: 'Mahendra Damodardas Baahubali' },
-    { id: 'a3', status: 'queued', title: 'Import test cases from TestRail', elapsed: 2 * 60 + 5, by: 'Darth Vader' },
+    // v4 item 5 (22 Oct 2026): a queued copy in place of the TestRail import,
+    // in project-actions-listing.md §1.1's grammar, to this project's own folder.
+    { id: 'a3', status: 'queued', title: 'Copy test cases to Payments', elapsed: 2 * 60 + 5, by: 'Darth Vader' },
   ],
   mobileApp: [
     { id: 'a4', status: 'running', title: 'Move test cases to Internal HRMS / Archive', done: 9, total: 24, unit: 'test cases',
@@ -88,43 +90,43 @@ const ACTIONS = {
  */
 export const PROJECTS = [
   {
-    id: 'web-app', name: 'Web app', tags: ['prod', 'report'], testCases: 1240, automatedPct: 62, testRuns: 38,
+    id: 'web-app', name: 'Web app', tags: ['prod', 'report'], testCases: 1240, testRuns: 38,
     createdBy: 'Ritika Sharma', updatedAt: ago(4, 2, 17), lastActionAt: ago(0, 2, 6),
-    unassigned: 12, needConfig: 4, actions: ACTIONS.web, visitedAt: ago(0, 2, 11), starred: true,
+    unassigned: 12, actions: ACTIONS.web, visitedAt: ago(0, 2, 11), starred: true,
   },
   {
-    id: 'mobile-app', name: 'Mobile app', tags: ['stage'], testCases: 3110, automatedPct: 48, testRuns: 112,
+    id: 'mobile-app', name: 'Mobile app', tags: ['stage'], testCases: 3110, testRuns: 112,
     createdBy: 'Mahendra Damodardas Baahubali', updatedAt: ago(1, 5, 2), lastActionAt: ago(0, 0, 40),
-    unassigned: 0, needConfig: 9, actions: ACTIONS.mobileApp, visitedAt: ago(1, 3, 24),
+    unassigned: 0, actions: ACTIONS.mobileApp, visitedAt: ago(1, 3, 24),
   },
   {
-    id: 'ipad-app', name: 'iPad app', tags: ['Zephyr Scale Import'], testCases: 9890, automatedPct: 91, testRuns: 240,
+    id: 'ipad-app', name: 'iPad app', tags: ['Zephyr Scale Import'], testCases: 9890, testRuns: 240,
     createdBy: 'Oppenheimer', updatedAt: ago(0, 3, 9), lastActionAt: ago(0, 3, 9),
-    unassigned: 3, needConfig: 0, actions: [], visitedAt: ago(3, 1, 37),
+    unassigned: 3, actions: [], visitedAt: ago(3, 1, 37),
   },
   {
-    id: 'mobile-web', name: 'Mobile web', tags: [], testCases: 482, automatedPct: 18, testRuns: 6,
+    id: 'mobile-web', name: 'Mobile web', tags: [], testCases: 482, testRuns: 6,
     createdBy: 'Darth Vader', updatedAt: ago(12, 1, 44), lastActionAt: ago(0, 1, 2),
-    unassigned: 27, needConfig: 2, actions: ACTIONS.mobileWeb, visitedAt: null,
+    unassigned: 27, actions: ACTIONS.mobileWeb, visitedAt: null,
   },
   {
     id: 'desktop-website', name: 'Desktop website', tags: ['dev', 'stage', 'report', 'Zephyr Scale Import'],
-    testCases: 5200, automatedPct: 74, testRuns: 87,
+    testCases: 5200, testRuns: 87,
     createdBy: 'Gabbar Singh', updatedAt: ago(6, 4, 30), lastActionAt: ago(6, 4, 30),
     // Starred but not visited lately, so the switcher has a Starred group.
-    unassigned: 0, needConfig: 0, actions: [], visitedAt: null, starred: true,
+    unassigned: 0, actions: [], visitedAt: null, starred: true,
   },
   {
-    id: 'blog-website', name: 'Blog website', tags: [], testCases: 64, automatedPct: 25, testRuns: 2,
+    id: 'blog-website', name: 'Blog website', tags: [], testCases: 64, testRuns: 2,
     // Updated (project details) on Jun 30; a test run executed on Jul 14 was
     // the last action of any kind, more than 90 days ago, so it is inactive.
     createdBy: 'Kokushibo', updatedAt: on(2026, 6, 30, 16, 5), lastActionAt: on(2026, 7, 14, 11, 20),
-    unassigned: 0, needConfig: 0, actions: [], visitedAt: null,
+    unassigned: 0, actions: [], visitedAt: null,
   },
   {
-    id: 'internal-hrms', name: 'Internal HRMS', tags: ['prod'], testCases: 0, automatedPct: null, testRuns: 0,
+    id: 'internal-hrms', name: 'Internal HRMS', tags: ['prod'], testCases: 0, testRuns: 0,
     createdBy: 'George Orwell', updatedAt: ago(2, 6, 51), lastActionAt: ago(2, 6, 51),
-    unassigned: 0, needConfig: 0, actions: [], visitedAt: null,
+    unassigned: 0, actions: [], visitedAt: null,
   },
 ]
 
@@ -132,11 +134,11 @@ export const PROJECTS = [
    Archive icon come from the test status vocabulary (GAP: no project state). */
 export const ARCHIVED = [
   {
-    id: 'tv-app', name: 'TV app', tags: ['report'], testCases: 2300, automatedPct: 55, testRuns: 64,
+    id: 'tv-app', name: 'TV app', tags: ['report'], testCases: 2300, testRuns: 64,
     createdBy: 'Mehmed Dracul', archivedAt: on(2026, 8, 22, 15, 42), archivedBy: 'Darth Vader',
   },
   {
-    id: 'watch-app', name: 'Watch app', tags: [], testCases: 118, automatedPct: 0, testRuns: 9,
+    id: 'watch-app', name: 'Watch app', tags: [], testCases: 118, testRuns: 9,
     createdBy: 'Ritika Sharma', archivedAt: on(2026, 9, 3, 9, 18), archivedBy: 'Ritika Sharma',
   },
 ]

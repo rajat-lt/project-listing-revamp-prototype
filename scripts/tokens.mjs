@@ -121,6 +121,8 @@ const MAP = [
   ['--btn-danger-hover-text', L + 'btn.danger.hoverText'],
   ['--btn-primary-bg', L + 'btn.primary.bg'],
   ['--btn-primary-hover-bg', L + 'btn.primary.hoverBg'],
+  ['--btn-primary-selected-bg', L + 'btn.primary.selectedBg'],
+  ['--btn-primary-border', L + 'btn.primary.border'],
   ['--btn-primary-text', L + 'btn.primary.text'],
   ['--btn-inactive-bg', L + 'btn.inactive.bg'],
   ['--btn-inactive-text', L + 'btn.inactive.text'],

@@ -159,6 +159,18 @@ export const LTButton = React.forwardRef(function LTButton(
   )
 })
 
+/* ---------- LTButtonGroup ----------
+   Related actions joined into one control: the inner corners square off and
+   neighbouring borders overlap into one divider. Actions only, never a
+   selection or a set of views (guidelines/ltbuttongroup.md, README §1).
+   Documented props: children, className, style. The split button is
+   compositional: an LTButton, then an LTActionMenu whose anchor is an
+   icon-only LTIconButton of the same variant and size, with no tooltip of
+   its own (ltbuttongroup.md, "The split button, officially"). */
+export function LTButtonGroup({ children, className, style }) {
+  return <div className={cx('lt-btngroup', className)} style={style}>{children}</div>
+}
+
 /* ---------- LTIconButton ----------
    Always an accessible label plus a tooltip showing it, with the shortcut
    when one exists (guidelines/lticonbutton.md). */
